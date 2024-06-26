@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<div style = "height: 20%">
+</div>
+<div>
+    <div class="border d-flex align-items-center justify-content-center" style="height: 400px;">
+        <form class="form_data" {% if admin %} action="/admin/dashboard/reservation" {% endif %} method="POST" id="form_data">
+            <div class="row mb-4">
+                <div class="col">
+                    <div class="form-outline">
+                        <input type="text" id="form3Example1" class="form-control" name="Number" required minlength="1"/>
+                        <label class="form-label" for="form3Example1">Číslo rezervace</label>
+                    </div>
+                </div>
+                {% if not admin %}
+                <div class="col">
+                    <div class="form-outline">
+                        <input type="text" id="form3Example2" class="form-control" name="Email" required minlength="1"/>
+                        <label class="form-label" for="form3Example2">Email</label>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <button id="formButtonSubmin" formmethod="post" type="submit" class="btn btn-primary btn-block mb-4">Potvrdit</button>
+        </form>
+        {% if msg %}{{msg}}{% endif %}
+    </div>
+</div>
+{% endblock %}

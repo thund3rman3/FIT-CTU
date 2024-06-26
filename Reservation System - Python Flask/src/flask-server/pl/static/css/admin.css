@@ -1,0 +1,118 @@
+h1 {
+    text-align: left;
+    color: #000000;
+    font-size: 2.5em; /* 40px/16=2.5em */
+}
+  
+p {
+    text-align: center;
+    color: #000000;
+    font-size: 0.875em; /* 14px/16=0.875em */
+}
+
+.form {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    height: 100vh;
+}
+
+.title {
+    font-size: 36px;
+    font-weight: 600;
+}
+
+.input-container {
+    height: 50px;
+    position: relative;
+    width: 100%;
+    margin-top: 30px;
+}
+
+.input-container-large {
+    height: 300px;
+    position: relative;
+    width: 100%;
+    margin-top: 30px;
+}
+
+.input {
+    background-color: #303245;
+    border-radius: 12px;
+    border: 0;
+    box-sizing: border-box;
+    color: #eee;
+    font-size: 18px;
+    height: 100%;
+    outline: 0;
+    padding: 4px 20px 0;
+    width: 100%;
+}
+
+.submit-button {
+    background-color: #08d;
+    border-radius: 12px;
+    border: 0;
+    box-sizing: border-box;
+    color: #eee;
+    cursor: pointer;
+    font-size: 18px;
+    height: 50px;
+    margin-top: 38px;
+    margin-bottom: 50px;
+    text-align: center;
+    width: 100%;
+}
+  
+.submit-button:active {
+    background-color: #06b;
+}
+
+.submit-button:hover {
+    background-color: #06b;
+}
+
+.control-button {
+    background-color: rgb(87, 92, 95);
+    border-radius: 12px;
+    border: 0;
+    box-sizing: border-box;
+    color: #eee;
+    cursor: pointer;
+    font-size: 18px;
+    height: 70px;
+    margin-top: 38px;
+    text-align: center;
+    width: 170px;
+}
+
+.control-button:active {
+    background-color: rgb(113, 119, 129);
+}
+
+.control-button:hover {
+    background-color: rgb(113, 119, 129);
+}
+
+.delete-button {
+    background-color: rgb(221, 0, 0);
+    border-radius: 12px;
+    border: 0;
+    box-sizing: border-box;
+    color: #eee;
+    cursor: pointer;
+    font-size: 18px;
+    height: 50px;
+    margin-top: 38px;
+    margin-bottom: 50px;
+    text-align: center;
+    width: 100%;
+}
+  
+.delete-button:active {
+    background-color: rgb(187, 0, 0);
+}
+
+.delete-button:hover {
+    background-color: rgb(175, 0, 0);
+}

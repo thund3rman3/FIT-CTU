@@ -1,0 +1,41 @@
+{% extends "base.html" %} {% block title %}home{% endblock %}
+{% block content %}
+<head>
+	<script src="https://kit.fontawesome.com/b99e675b6e.js"></script>
+	<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <link rel="stylesheet" href="css/font-awesome.css">
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+	<script>
+		$(document).ready(function(){
+			$(".default_option").click(function(){
+			  $(".dropdown ul").addClass("active");
+			});
+
+			$(".dropdown ul li").click(function(){
+			  var text = $(this).text();
+			  $(".default_option").text(text);
+			  $(".dropdown ul").removeClass("active");
+			});
+		});
+	</script>
+</head>
+<body>
+
+<div class="wrapper">
+    <form class="search_box" action="/search/data" method="POST" >
+        <select class="dropdown" name="dropdown">
+              <option value="nazev">Jméno</option>
+              <option value="zanr">Žánr</option>
+              <option value="rok_vydani">Rok</option>
+        </select>
+        <div class="search_field">
+          <input type="text" class="input" name="Name" pattern=".*\S.*" placeholder="Vyhledat">
+          <button class="fas fa-search" type="submit" value="a"></button>
+      </div>
+    </form>
+</div>
+
+
+
+</body>
+{% endblock %}

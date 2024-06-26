@@ -1,0 +1,54 @@
+   const int MAX = 1000;
+    for (int i = 0; i < MAX; ++i) {
+        CBigInt ahoj(i);
+        CBigInt r;
+        for (int j = 0; j < MAX; ++j) {
+            const char* IandJ = (std::to_string( i * j)).c_str();
+            r = ahoj * j;
+            assert(equal(r, IandJ));
+            r = j * ahoj;
+            assert(equal(r, IandJ));
+            const char* Iand_J = std::to_string(i * -j).c_str();
+            r = ahoj * -j;
+            assert(equal(r, Iand_J));
+            r = -j * ahoj;
+            assert(equal(r, Iand_J));
+
+            const char* IplusJ = std::to_string(i + j).c_str();
+            r = ahoj + j;
+            assert(equal(r, IplusJ));
+            r = j + ahoj;
+            assert(equal(r, IplusJ));
+
+            const char* I_J = std::to_string(i - j).c_str();
+            r = ahoj + -j;
+            assert(equal(r, I_J));
+            r = -j + ahoj;
+            assert(equal(r, I_J));
+        }
+        ahoj = -i;
+        for (int j = 0; j < MAX; ++j) {
+            const char* IandJ = std::to_string(-i * j).c_str();
+            r = ahoj * j;
+            assert(equal(r, IandJ));
+            r = j * ahoj;
+            assert(equal(r, IandJ));
+            const char* Iand_J = std::to_string(-i * -j).c_str();
+            r = ahoj * -j;
+            assert(equal(r, Iand_J));
+            r = -j * ahoj;
+            assert(equal(r, Iand_J));
+
+            const char* IplusJ = std::to_string(-i + j).c_str();
+            r = ahoj + j;
+            assert(equal(r, IplusJ));
+            r = j + ahoj;
+            assert(equal(r, IplusJ));
+
+            const char* I_J = std::to_string(-i - j).c_str();
+            r = ahoj + -j;
+            assert(equal(r, I_J));
+            r = -j + ahoj;
+            assert(equal(r, I_J));
+        }
+    }

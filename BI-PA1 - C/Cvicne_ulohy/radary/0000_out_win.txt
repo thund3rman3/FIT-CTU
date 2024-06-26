@@ -1,0 +1,4 @@
+Seznam cilu a radaru:
+Pokryti:
+Radar #0: 3
+Radar #1: 5

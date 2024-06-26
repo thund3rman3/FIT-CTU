@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+    <body class="movie">
+    <h1> {{ film.nazev }} </h1>
+    <h2> {{ film.rok_vydani }}, {{ film.zanr }}, {{ film.delka_filmu }} minut</h2>
+    <p> {{ film.popis }} </p>
+
+    {% if screenings %}
+        <table class="table">
+            <thead class="bg-light">
+            <tr style="cursor: default">
+                <th> Název</th>
+                <th> Datum</th>
+                <th> Čas</th>
+                <th> Sál</th>
+                <th> Kapacita</th>
+                <th> Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for p in screenings %}
+                <tr style="cursor: default">
+                    <td> {{ p[0][0].nazev }}</td>
+                    <td> {{ p[0][1].datum }}</td>
+                    <td> {{ p[0][1].cas }}</td>
+                    <td> {{ p[0][2].cislo }}</td>
+                    {% if 84-p[1] %}
+                        <td>
+                            <span class="badge badge-success rounded-pill d-inline">Volno {{84-p[1]}}</span>
+                        </td>
+                    {% else %}
+                        <td>
+                            <span class="badge badge-danger rounded-pill d-inline">Obsazeno</span>
+                        </td>
+                    {% endif %}
+
+                    <td>
+                        <a type="button" class="btn btn-primary btn-rounded btn-sm"
+                           href="/reservation/{{ p[0][1].promitani_id }}/reservation">Rezervovat</a>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <h2>Tento film se momentálně nepromítá.</h2>
+    {% endif %}
+    </body>
+{% endblock %}

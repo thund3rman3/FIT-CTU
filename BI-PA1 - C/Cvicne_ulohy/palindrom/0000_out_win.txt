@@ -1,0 +1,6 @@
+Zadejte retezec:
+Retezec je palindrom (case-sensitive).
+Retezec je palindrom (case-insensitive).
+Retezec je palindrom (case-sensitive).
+Retezec neni palindrom.
+Retezec je palindrom (case-insensitive).

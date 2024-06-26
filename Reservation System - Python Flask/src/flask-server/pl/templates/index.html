@@ -1,0 +1,40 @@
+{% extends "base.html" %} {% block title %}home{% endblock %}
+{% block content %}
+<head>
+    <meta name="viewport" content="initial-scale=1.0; maximum-scale=1.0; width=device-width;">
+</head>
+<body>
+<svg width="400" height="100">
+  <rect x="5" y="20" rx="20" ry="20" width="135" height="55"
+  style="fill:antiquewhite;stroke:black;stroke-width:5;opacity:0.5"/>
+    <text x="25" y="57" fill="brown" font-size="27"> Vesmír</text>>
+</svg>
+<h1>Tento týden</h1>
+<br>
+{% if film_promitani%}
+<table class="table">
+    <thead class="bg-light">
+        <tr style="cursor: default">
+            <tr style="background-color: #7979b9">
+                <th> Čas</th>
+                <th> Datum</th>
+                <th> Název</th>
+        </tr>
+    </thead>
+    {% for p in film_promitani %}
+        <tr onclick="window.location='/movie/{{p[0].film_id}}';"
+                onMouseOver="this.style.color='#2150d1'"
+                onMouseOut="this.style.color='#000000'">
+
+            <td> {{p[1].cas}}</td>
+            <td> {{p[1].datum}}</td>
+            <td> {{p[0].nazev}}</td>
+        </tr>
+    {% endfor %}
+</table>
+    <tr>
+{% else %}
+<h2>Pro Vaše vyhledávání nebyly nalezeny žádné výsledky.</h2>
+{% endif %}
+</body>
+{% endblock %}

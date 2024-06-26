@@ -1,0 +1,70 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWTexture2D<float4> Input;
+RWTexture2D<float4> Output;
+
+int resolutionX;
+int resolutionY;
+
+float Scale;
+float ShiftAmplitude;
+
+float distance_multiplier;
+float borderNoiseAmplitude;
+
+float seaLevel;
+float beachWidth;
+
+float seed;
+
+struct Color {
+    float r;
+    float g;
+    float b;
+    float a;
+};
+
+RWStructuredBuffer<Color> noise;
+
+float distance_squared(float x, float y) {
+    float dx = 2.0f * x - 1.0f;
+    float dy = 2.0f * y - 1.0f;
+    return dx * dx + dy * dy;
+}
+
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    float x = id.x / (float)(resolutionX);
+    float y = id.y / (float)(resolutionY);
+        
+    float Xshift = noise[id.x + id.y * resolutionX].r;
+    float Yshift = noise[id.x + id.y * resolutionX].g;
+    
+    Xshift = id.x + (Xshift - 0.5f) * ShiftAmplitude;
+    Yshift = id.y + (Yshift - 0.5f) * ShiftAmplitude;
+
+    Xshift = max(min(Xshift, 511), 0);
+    Yshift = max(min(Yshift, 511), 0);
+
+    Output[id.xy] = Input[int2(Xshift, Yshift)];
+
+    float noiseValue = noise[id.x + int(id.y) * int(resolutionX)].b;
+    float noiseValue2 = noise[id.x + int(id.y) * int(resolutionX)].a;
+   
+    float elevation = (1 - distance_squared(x, y)) * distance_multiplier;
+    elevation = elevation - noiseValue * borderNoiseAmplitude - noiseValue2 * (borderNoiseAmplitude / 2.0f);
+    
+    if (elevation < seaLevel + beachWidth) {
+        Output[id.xy] = float4(1, 1, 0, 0);
+    }
+
+    if (elevation < seaLevel) {
+        Output[id.xy] = float4(0, 0, 1, 0);
+    }
+
+    //Output[id.xy] = Input[int2(Xshift, Yshift)];
+}

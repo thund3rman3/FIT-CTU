@@ -1,0 +1,15 @@
+0,0: KLM
+5,0: Lufthansa
+10,0: SmartWings
+7,0: AirFrance
+2,0: Qantas
+0,1: KLM
+5,1: Lufthansa
+10,1: SmartWings
+7,1: AirFrance
+2,1: Qantas
+0,2: KLM
+5,2: Lufthansa
+10,2: SmartWings
+7,2: AirFrance
+2,2: Qantas

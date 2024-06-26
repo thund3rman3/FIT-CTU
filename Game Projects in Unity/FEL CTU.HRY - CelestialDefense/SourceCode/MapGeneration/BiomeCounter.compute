@@ -1,0 +1,85 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+RWTexture2D<float4> Input;
+
+// 0 - Water
+// 1 - Volcano
+// 2 - Plains
+// 3 - Beach
+// 4 - Forest
+// 5 - mountain
+// 6 - Wasteland
+// 7 - Burned forest
+RWStructuredBuffer<int> biomeCounter;
+
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+	float4 color = Input[id.xy];
+
+	if (abs(color.x - 0) < 0.1f &&
+		abs(color.y - 0) < 0.1f &&
+		abs(color.z - 1) < 0.1f)
+	{
+		//Water
+		InterlockedAdd(biomeCounter[0], 1);
+	}
+	else 
+	if( abs(color.x - 1) < 0.1f &&
+		abs(color.y - 0) < 0.1f &&
+		abs(color.z - 0) < 0.1f)
+	{
+		//Volcano
+		InterlockedAdd(biomeCounter[1], 1);
+	}
+	else
+	if (abs(color.x - 0) < 0.1f &&
+		abs(color.y - 1) < 0.1f &&
+		abs(color.z - 0) < 0.1f)
+	{
+		//Plains
+		InterlockedAdd(biomeCounter[2], 1);
+	}
+	else 
+	if (abs(color.x - 1) < 0.1f &&
+		abs(color.y - 1) < 0.1f &&
+		abs(color.z - 0) < 0.1f)
+	{
+		//Beach
+		InterlockedAdd(biomeCounter[3], 1);
+	}
+	else 
+	if (abs(color.x - 0.1) < 0.1f &&
+		abs(color.y - 0.5) < 0.1f &&
+		abs(color.z - 0.1) < 0.1f)
+	{
+		//Forest
+		InterlockedAdd(biomeCounter[4], 1);
+	}
+	else
+	if (abs(color.x - 0.8) < 0.1f &&
+		abs(color.y - 0.8) < 0.1f &&
+		abs(color.z - 0.8) < 0.1f)
+	{
+		//mountain
+		InterlockedAdd(biomeCounter[5], 1);
+	}
+	else
+	if (abs(color.x - 0.66) < 0.1f &&
+		abs(color.y - 0.66) < 0.1f &&
+		abs(color.z - 0.33) < 0.1f)
+	{
+		//Wasteland
+		InterlockedAdd(biomeCounter[6], 1);
+	}
+	else
+	if (abs(color.x - 0.1) < 0.1f &&
+		abs(color.y - 0.1) < 0.1f &&
+		abs(color.z - 0.1) < 0.1f)
+	{
+		//Burned forest
+		InterlockedAdd(biomeCounter[7], 1);
+	}
+
+}

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<head>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/admin.css') }}">
+    <title>Cinema Reserve</title>
+</head>
+<div class="form">
+    <form action="" method="POST">
+        <div class="title">Přihlášení správce</div>
+        <div class="input-container">
+            <input class="input" type="text" name="Email" placeholder="Email">
+        </div>
+        <div class="input-container">
+            <input class="input" type="password" name="Password" placeholder="Heslo">
+        </div>
+        <input class="submit-button" type="submit" value="Login">
+        {% if failed_login %}
+            Nesprávný email nebo heslo.
+        {% endif %}
+    </form>
+</div>
+{% endblock %}

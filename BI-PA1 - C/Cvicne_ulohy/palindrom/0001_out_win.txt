@@ -1,0 +1,4 @@
+Zadejte retezec:
+Retezec je palindrom (case-sensitive).
+Retezec je palindrom (case-sensitive).
+Nespravny vstup.

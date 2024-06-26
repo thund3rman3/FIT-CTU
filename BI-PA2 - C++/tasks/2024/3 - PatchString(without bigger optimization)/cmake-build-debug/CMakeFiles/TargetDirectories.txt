@@ -1,0 +1,3 @@
+C:/Users/galem/Desktop/Pa2repo2024/velke_ulohy/3/cmake-build-debug/CMakeFiles/3.dir
+C:/Users/galem/Desktop/Pa2repo2024/velke_ulohy/3/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Users/galem/Desktop/Pa2repo2024/velke_ulohy/3/cmake-build-debug/CMakeFiles/rebuild_cache.dir

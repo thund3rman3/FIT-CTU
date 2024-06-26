@@ -1,0 +1,44 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWTexture2D<float4> Result;
+
+float resolutionX;
+float resolutionY;
+
+struct Point {
+    int x;
+    int y;
+    float4 color;
+};
+
+RWStructuredBuffer<Point> points;
+int pointCount;
+
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here!
+    float x = id.x / resolutionX;
+    float y = id.y / resolutionY;
+
+    float minDistance = 999999;
+    for (int i = 0; i < pointCount; i++) {
+        Point p = points[i];
+
+        float distance = sqrt( (id.x - (float)(p.x)) * (id.x - (float)(p.x)) + (id.y - (float)(p.y)) * (id.y - (float)(p.y)));
+
+        if (minDistance > distance) {
+            minDistance = distance;
+            Result[id.xy] = p.color;
+        }
+
+        //Debug - shows location of vorenoid centers
+        //if (distance == 0) {
+        //    Result[id.xy] = float4(0, 0, 0, 0);
+        //}
+    }
+
+}

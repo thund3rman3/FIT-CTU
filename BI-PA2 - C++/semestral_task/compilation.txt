@@ -1,0 +1,17 @@
+choose -L./folder_related_to_your_system
+mingw is compiled for 32b version
+
+1.
+g++ -std=c++20 -Wall -pedantic -g -o excel -fsanitize=address 
+test.cpp -L./x86_64-linux-gnu -lexpression_parser
+2.
+./excel 
+
+
+
+Pro pouziti CLion+Windows CZ:
+Stáhnout si nějakou 32-bitovou verzi MinGW (třeba https://github.com/brechtsanders/winlibs_mingw/releases/download/12.3.0-16.0.4-11.0.0-ucrt-r1/winlibs-i686-posix-dwarf-gcc-12.3.0-llvm-16.0.4-mingw-w64ucrt-11.0.0-r1.zip), unzipnout to, a přidat si nový toolchain do CLionu.
+Settings->toolchail->(+)Mingw->pojmenovat->zadat tam cestu do toho stahleho mingw
+Settings->CMake->(+)->pojmenovat a dat build type na debug(je to spatne obrazku)->prepnout na nove Mingw
+Prepnout CMake profile na novy CMake a hotovo
+ilustracni obrazky v WinCompileCLion

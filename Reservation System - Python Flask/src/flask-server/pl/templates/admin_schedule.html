@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<head>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/admin.css') }}">
+    <title>Cinema Reserve</title>
+</head>
+<body>
+    <form action="/admin/dashboard/edit">
+        <button class="control-button" name="Back" type="submit">Zpět</button>
+    </form>
+    <div class="form">
+        <form action="" method="POST">
+            {% if msg %}{{msg}}{% endif %}
+            {% if edit %}
+            <input class="delete-button" type="submit" name="Action" value="Odstranit">
+            {% endif %}
+            <div class="title">Film</div>
+            <div class="input-container">
+                <select class="input" name="Movie">
+                    {% for movie in movies %}
+                    <option value="{{movie.film_id}}" {% if edit and movie == film %} selected="selected" {% endif %}>{{movie.nazev}}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="title">Sál</div>
+            <div class="input-container">
+                <select class="input" name="Room">
+                    {% for room in rooms %}
+                    <option value="{{room.sal_id}}" {% if edit and room == sal %} selected="selected" {% endif %}>{{room.cislo}}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="title">Datum</div>
+            <div class="input-container">
+                <input class="input" type="datetime-local" name="Date" value="{{date}}">
+            </div>
+            <input class="submit-button" type="submit" name="Action" value="{% if edit %}Změnit{% else %}Přidat{% endif %}">
+        </form>
+    </div>
+</body>
+{% endblock %}

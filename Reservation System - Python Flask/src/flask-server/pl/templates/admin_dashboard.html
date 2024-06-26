@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block content %}
+<head>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/admin.css') }}">
+	<title>Cinema Reserve</title>
+</head>
+<body class="movie">
+    {% if not add and not edit %}
+    <form action="/admin/dashboard/add">
+        <button class="control-button" name="Add" type="submit">Přidat film</button>
+    </form>
+    <form action="/admin/dashboard/edit">
+        <button class="control-button" name="Edit" type="submit">Editace harmonogramu</button>
+    </form>
+    <form action="/admin/dashboard/reservation">
+        <button class="control-button" name="Reservation" type="submit">Zrušit rezervaci</button>
+    </form>
+    {% else %}
+    <form action="/admin/dashboard">
+        <button class="control-button" name="Back" type="submit">Zpět</button>
+    </form>
+    {% endif %}
+    {% if add %}
+    <div class="form">
+        <form action="" method="POST">
+            <div class="title">Přidání filmu</div>
+            <div class="input-container">
+                <input class="input" type="text" name="Name" placeholder="Jméno">
+            </div>    
+            <div class="input-container">
+                <input class="input" type="text" name="Length" placeholder="Délka">
+            </div>    
+            <div class="input-container">
+                <input class="input" type="text" name="Year" placeholder="Rok vydání">
+            </div>    
+            <div class="input-container">
+                <input class="input" type="text" name="Genre" placeholder="Žánr">
+            </div>    
+            <div class="input-container-large">
+                <textarea class="input" name="About" placeholder="Popis" cols="50" rows="6"></textarea>
+            </div>    
+            <input class="submit-button" type="submit" value="Přidat">
+        </form>
+    </div>
+    {% elif edit %}
+    <form action="/admin/dashboard/edit/new">
+        <button class="control-button" name="Add" type="submit">Přidat</button>
+    </form>
+    <table class="table">
+        <tr>
+            <th> Cas</th>
+            <th> Datum</th>
+            <th> film_id</th>
+            <th> sal_id</th>
+            <th> nazev</th>
+        </tr>
+            
+        {% for p in edit %}
+        <tr onclick="window.location='/admin/dashboard/edit/{{p[1].promitani_id}}';">
+            <td> {{p[1].cas}}</td>
+            <td> {{p[1].datum}}</td>
+            <td> {{p[1].film_id}}</td>
+            <td> {{p[1].sal_id}}</td>
+            <td> {{p[0].nazev}}</td>
+            {% endfor %}
+        </tr>
+    </table>
+    {% endif %}
+    {% if msg %}
+    <p>{{msg}}</p>
+    {% endif %}
+</body>
+{% endblock %}

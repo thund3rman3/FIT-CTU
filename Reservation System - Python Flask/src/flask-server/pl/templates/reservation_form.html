@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+
+    <div style = "height: 20%">
+    </div>
+    <div class="border d-flex align-items-center justify-content-center" style="height: 400px;">
+        <form class="form_data" name="inputForm" action="/reservation/{{screening_id}}/confirmation" method="POST" id="form_data">
+            <div class="row mb-4">
+                <div class="col">
+                    <div class="form-outline">
+                        <input type="text" id="form3Example1" class="form-control" name="name" required minlength="3" required maxlength="20">
+                        <label class="form-label" for="form3Example1">First name</label>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-outline">
+                        <input type="text" id="form3Example2" class="form-control" name="surname" required minlength="3" required maxlength="20"/>
+                        <label class="form-label" for="form3Example2">Last name</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-outline mb-4">
+                <input  type="email" id="email" class="form-control" name="email" required minlength="1"/>
+                <label class="form-label" for="form3Example3">Email address</label>
+            </div>
+
+                <div class="form-outline mb-4">
+                <input type="email" id="emailConfirmation" class="form-control" name="emailConfirmation" required minlength="1"/>
+                <label class="form-label" for="form3Example3">Email address confirmation</label>
+            </div>
+
+            <button id="formButtonSubmin" class="btn btn-primary btn-block mb-4">Potvrdit</button>
+        </form>
+    </div>
+        <script src="{{ url_for('static', filename='js/form.js') }}"></script>
+
+{% endblock %}

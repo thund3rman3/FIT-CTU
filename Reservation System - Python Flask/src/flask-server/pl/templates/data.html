@@ -1,0 +1,35 @@
+{% extends "base.html" %} {% block title %}home{% endblock %}
+{% block content %}
+    <head>
+        <meta name="viewport" content="initial-scale=1.0; maximum-scale=1.0; width=device-width;">
+    </head>
+
+    <body>
+    {% if found %}
+        <table class="table">
+            <thead class="bg-light">
+            <tr style="cursor: default">
+                <th> Název</th>
+                <th> Rok</th>
+                <th> Žánr</th>
+                <th> Délka</th>
+            </tr>
+            </thead>
+            {% for film in found %}
+                <tr onclick="window.location='/movie/{{film.film_id}}';"
+                    onMouseOver="this.style.color='#2150d1'"
+                    onMouseOut="this.style.color='#000000'">
+
+                    <td> {{ film.nazev }}</td>
+                    <td> {{ film.rok_vydani }} </td>
+                    <td> {{ film.zanr }} </td>
+                    <td> {{ film.delka_filmu }} </td>
+                </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <div style="height: 20%"></div>
+        <h2>Pro Vaše vyhledávání nebyly nalezeny žádné výsledky.</h2>
+    {% endif %}
+    </body>
+{% endblock %}
