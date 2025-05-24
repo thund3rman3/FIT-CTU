@@ -2,7 +2,7 @@
 
 The result of this bachelor's thesis is a Blender add-on for version 4.3.2 which generates 3D wood material.
 
-You can install it by opening Edit > Preferences > Add-ons > Install from disk: plugin.zip.
+You can install it by opening Edit > Preferences > Add-ons > Install from disk: realwood.zip.
 
 You use the plugin by going to the Shading tab, then clicking Add > RealWood, and the material will appear among the others.
 
