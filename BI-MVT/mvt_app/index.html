@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>3D Fractals VR and AR</title>
+
+    <!-- Libraries -->
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script> <!-- lower version of AFrame compatible with AR.js -->
+    <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-particle-system-component@a5a8449/dist/aframe-particle-system-component.js"></script>
+    <script src="https://unpkg.com/aframe-environment-component@1.3.3/dist/aframe-environment-component.min.js"></script>
+  </head>
+
+  <body style="margin: 0px; overflow: hidden">
+
+    <a-scene id="vr-scene">
+
+      <a-assets>
+        <audio id="cink-sound" src="https://cdn.glitch.global/40d00152-e929-437e-8fc0-44ac5a314f1f/cink.mp3?v=1733054914778" preload="auto"></audio>
+        <img id="boxTexture" src="https://cdn.glitch.global/bbb1ef81-155a-4c2a-b506-d08c3978f501/R.jpg?v=1733144249799" />
+        <img id="octTexture" src="https://cdn.glitch.global/bbb1ef81-155a-4c2a-b506-d08c3978f501/g.jpg?v=1733144255279">
+      </a-assets>
+
+      <a-entity sound="src: #cink-sound"></a-entity>
+
+      <!-- Environment -->
+      <a-entity environment="preset: moon; skyType: gradient; skyColor: #71AFB6; horizonColor: #7397B7;"></a-entity>
+      <a-entity light="type: ambient; color: #BBB"></a-entity>
+      <a-entity
+        particle-system="preset: snow; maxAge: 6; size: 1; color: #FFFAFA; particleCount: 3000"
+      ></a-entity>
+  
+      <!-- Portal to AR -->
+      <a-box
+        cursor-listener
+        material="shader: flat; color: #982D96;"
+        position="8 2 -5"
+        class="clickable"
+        animation__opacity="property: material.opacity; from: 0.5; to: 0.8; dur: 3000; dir: alternate; loop: true"
+        animation__scale="property: scale; from: 5 5 0.1; to: 5.2 5.2 0.1; dur: 3000; dir: alternate; loop: true"
+      ></a-box>
+
+      <a-entity 
+        id="fractalBox"
+        position="0 4.5 -6"
+        animation="property: rotation; to: 0 360 0; loop: true; dur: 30000"
+      ></a-entity>
+
+      <a-entity 
+        id="fractalOct"
+        position="-9 2 -6"
+        animation="property: rotation; to: 0 -360 0; loop: true; dur: 30000"
+      ></a-entity>
+
+      <a-camera look-controls>
+        <a-entity
+          animation__click="property: scale; startEvents: click; easing: easeInCubic; dur: 150; from: 0.1 0.1 0.1; to: 1 1 1"
+          animation__fusing="property: scale; startEvents: fusing; easing: easeInCubic; dur: 1000; from: 1 1 1; to: 0.1 0.1 0.1"
+          animation__mouseleave="property: scale; startEvents: mouseleave; easing: easeInCubic; dur: 500; to: 1 1 1"
+          cursor="fuse: true; ; fuseTimeout: 1000;"
+          raycaster="far: 20; interval: 100; objects: .clickable"
+          material="color: grey; shader: flat"
+          position="0 0 -1"
+          geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
+        ></a-entity>
+      </a-camera>
+    </a-scene>
+
+    <!-- Box fractal (kód ze cvičení)-->
+    <script>
+      const initPosBox = { x: 0, y: 0, z: 0 }
+      const initSizeBox = 3;
+      const iterBox = 4;
+
+      function FractalRecursive(container, pos, size, iter) {
+        const box = document.createElement("a-box");
+        box.setAttribute("position", `${pos.x} ${pos.y} ${pos.z}`);
+        box.setAttribute("scale", `${size} ${size} ${size}`);
+        box.setAttribute("material", `src: #boxTexture`);
+
+        container.appendChild(box);
+
+        if (iter === 0) {
+          return;
+        }
+
+        const positions = [
+          { x: pos.x + size, y: pos.y, z: pos.z },
+          { x: pos.x - size, y: pos.y, z: pos.z },
+          { x: pos.x, y: pos.y + size, z: pos.z },
+          { x: pos.x, y: pos.y - size, z: pos.z },
+          { x: pos.x, y: pos.y, z: pos.z + size },
+          { x: pos.x, y: pos.y, z: pos.z - size },
+        ];
+
+        for (const pos of positions) {
+          FractalRecursive(container, pos, size / 3, iter - 1);
+        }
+      }
+
+      const fractalContainerBox = document.getElementById("fractalBox");
+      FractalRecursive(fractalContainerBox, initPosBox, initSizeBox, iterBox);
+    </script>
+
+    <!-- Octahedron flake fractal -->
+    <script>
+      const initPosOct = { x: 0, y: 0, z: 0 }
+      const initSizeOct = 1;
+      const iterOct = 3;
+
+      function OctahedronFlake(container, pos, size, iter) {
+        const octahedron = document.createElement('a-octahedron');
+        octahedron.setAttribute('position', `${pos.x} ${pos.y} ${pos.z}`);
+        octahedron.setAttribute("scale", `${size} ${size} ${size}`);
+        octahedron.setAttribute('material', 'src: #octTexture');
+        container.appendChild(octahedron);
+
+        if (iter === 0) {
+          return;
+        }
+
+        
+        const newPositions = [
+          { x: pos.x+size, y: pos.y+ size, z: pos.z },
+          { x: pos.x-size, y: pos.y+ size, z: pos.z },
+          { x: pos.x, y: pos.y+ size, z: pos.z+size },
+          { x: pos.x, y: pos.y+ size, z: pos.z-size },
+          { x: pos.x, y: pos.y + 2*size, z: pos.z },
+        ];
+
+        //Flake variant - with num=1 and num++ with every recursion, works for iter 0-2
+        // const newPositions = [
+        //   { x: pos.x+num*size, y: pos.y+ num*size, z: pos.z },
+        //   { x: pos.x-num*size, y: pos.y+ num*size, z: pos.z },
+        //   { x: pos.x, y: pos.y+ num*size, z: pos.z+num*size },
+        //   { x: pos.x, y: pos.y+ num*size, z: pos.z-num*size },
+        //   { x: pos.x, y: pos.y + 2*num*size, z: pos.z },
+        //   { x: num*pos.x, y: pos.y + size, z: num*pos.z },
+
+        for (const newPos of newPositions) {
+          OctahedronFlake(container, newPos, size, iter - 1);
+        }
+      }
+
+      const fractalContainerOct = document.getElementById("fractalOct");
+      OctahedronFlake(fractalContainerOct, initPosOct, initSizeOct, iterOct);
+    </script>
+
+    <script>
+      if (typeof AFRAME === "undefined") {
+        console.error("A-Frame not loaded.");
+      } else {
+        console.log("A-Frame loaded.");
+      }
+
+      const vrScene = document.getElementById("vr-scene");
+      let arScene;
+      let arLibLoaded = false;
+
+      function loadARLib(callback) {
+        if (arLibLoaded) {
+          console.log("AR.js library already loaded.");
+          callback();
+          return;
+        }
+        console.log("Loading AR.js library...");
+        const script = document.createElement("script");
+        script.src ="https://cdn.jsdelivr.net/gh/jeromeetienne/ar.js@2.2.0/aframe/build/aframe-ar.min.js";
+        script.onload = () => {
+          console.log("AR.js library loaded successfully.");
+          arLibLoaded = true;
+          callback();
+        };
+        script.onerror = () => {
+          console.error("Failed to load AR.js library.");
+        };
+        document.head.appendChild(script);
+      }
+
+      function createARScene() {
+        console.log("Creating AR scene...");
+        arScene = document.createElement("a-scene");
+        arScene.setAttribute("embedded", "");
+        arScene.setAttribute("arjs", "");
+        arScene.addEventListener("loaded", () => {
+          const fractalContainerOct = arScene.querySelector("#fractalOct");
+          OctahedronFlake(fractalContainerOct, initPosOct, initSizeOct, iterOct);
+        });
+        arScene.addEventListener("loaded", () => {
+          const fractalContainerBox = arScene.querySelector("#fractalBox");
+          FractalRecursive(fractalContainerBox, initPosBox, initSizeBox, iterBox);
+        });
+        arScene.innerHTML = `
+                <a-marker preset='kanji'>
+                  <a-entity id="fractalOct" position="0 0.4 0" scale="0.3 0.3 0.3"
+                  animation="property: rotation; to: 0 -360 0; loop: true; dur: 10000"
+                  ></a-entity>
+                </a-marker>
+
+                <a-marker preset='hiro'>
+                  <a-entity id="fractalBox" position="0 0.4 0" scale="0.4 0.4 0.4"
+                  animation__scale="property: scale; from: 0.4 0.4 0.4; to: 0.6 0.6 0.6; dur: 6000; dir: alternate; loop: true"
+                  ></a-entity>
+                </a-marker>
+
+                <a-entity camera></a-entity>
+            `;
+        document.body.appendChild(arScene);
+        console.log("AR scene created.");
+      }
+
+      function activateAR() {
+        console.log("Activating AR...");
+        vrScene.style.display = "none";
+        loadARLib(() => {
+          createARScene();
+        });
+      }
+
+      function deactivateAR() {
+        console.log("Deactivating AR...");
+        if (arScene) {
+          arScene.parentNode.removeChild(arScene);
+          arScene = null;
+          console.log("AR scene removed.");
+        }
+        vrScene.style.display = "block";
+      }
+
+      // Registering the cursor-listener component
+      AFRAME.registerComponent("cursor-listener", {
+        init: function () {
+          console.log("cursor-listener component initialized.");
+          this.el.addEventListener("click", () => {
+            const sound = document.querySelector("[sound]");
+            if (sound && sound.components.sound) {
+              sound.components.sound.playSound();
+              console.log("Sound played!");
+            } else {
+              console.error("Sound component not found!");
+            }
+            console.log("Portal clicked!");
+            activateAR();
+          });
+        },
+      });
+
+      // Get back from AR to VR
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          deactivateAR();
+        }
+      });
+    </script>
+  </body>
+</html>
