@@ -5,7 +5,7 @@ Webová aplikace kombinující VR & AR v prohlížeči pomocí JS knihoven A-Fra
 
 [>Play the video demo](https://youtu.be/nV8y-x6LvtY)
 
-
+![](project.jpg)
 ## Uživatelská dokumentace
 Aplikace je čistě ve webovém prohlížeči, tedy stačí mít chrome/edge/jiný a není potřeba nic doinstalovávat.
 Nejdříve se obejvíte ve VR, které se dá ovládat myší a šipkami.
@@ -40,3 +40,5 @@ Vývoj a vizualní debugging jsem dělal pomocí platformy glitch.com
 aframe-particle-system-component.js
 
 aframe-environment-component.min.js
+
+
