@@ -3,9 +3,9 @@
 # 3D Fractals VR and AR
 Webová aplikace kombinující VR & AR v prohlížeči pomocí JS knihoven A-Frame a AR.js.
 
-[![Watch the video](project.jpg)](https://youtu.be/nV8y-x6LvtY)
+[>Play the video demo](https://youtu.be/nV8y-x6LvtY)
 
-Clicking the image will open the video on YouTube.
+
 ## Uživatelská dokumentace
 Aplikace je čistě ve webovém prohlížeči, tedy stačí mít chrome/edge/jiný a není potřeba nic doinstalovávat.
 Nejdříve se obejvíte ve VR, které se dá ovládat myší a šipkami.
