@@ -1,0 +1,73 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &5819047673954934446
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8813301083559477035}
+  - component: {fileID: 6625471771580518983}
+  - component: {fileID: 2434566256874891358}
+  m_Layer: 0
+  m_Name: Background_Generator_1-9
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8813301083559477035
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5819047673954934446}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -3, y: -3, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6625471771580518983
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5819047673954934446}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: baf200c79f66fc242921d1a63c352fea, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CBackgroundGenerator
+  m_Tiles:
+  - {fileID: 5299606736814427651, guid: 578b7124c775d944d82b6bf50145fa0a, type: 3}
+  - {fileID: 4513613865637028912, guid: b109c7c29bd58b84383182cc3363deb2, type: 3}
+  - {fileID: 6713057398304735167, guid: e3f345c416e73d6499d41da91f76b76f, type: 3}
+  - {fileID: 6922733710221142168, guid: 2c04ecfdfc2323446809a80d357519d3, type: 3}
+  - {fileID: 949361463612179707, guid: 7ea808aaf4d6b3f45b9bdb3c8932ba26, type: 3}
+  - {fileID: 3766623394807551333, guid: 0a2b631e4a1bf664680e2f874471c829, type: 3}
+  - {fileID: 6118074563107953941, guid: a5276f212f10a8240a539b592931bd12, type: 3}
+  - {fileID: 3289092688339909948, guid: 20f6e5c471928194880be54d1307cb6a, type: 3}
+  - {fileID: 794552575454355805, guid: dbd0ec39648527647a2568cc547d671c, type: 3}
+  m_SizeX: 10
+  m_SizeY: 10
+  m_TileScale: 0.75
+--- !u!114 &2434566256874891358
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5819047673954934446}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1b861aa486056e140a1b264dbab26ce4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CParallax
+  m_MovementScalar: 0.25

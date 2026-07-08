@@ -1,0 +1,72 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!78 &1
+TagManager:
+  serializedVersion: 3
+  tags:
+  - Bober
+  - Spikes
+  - Lever
+  - Waterfall
+  - Pressure plate
+  - Safety
+  - Unsafe Ground
+  - Void
+  - Bomb
+  - Bomb Crate
+  - Spawn
+  - Exit
+  layers:
+  - Default
+  - TransparentFX
+  - Ignore Raycast
+  - Ground
+  - Water
+  - UI
+  - Bober
+  - Bomb
+  - Soul
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  m_SortingLayers:
+  - name: Background
+    uniqueID: 1109589771
+    locked: 0
+  - name: Default
+    uniqueID: 0
+    locked: 0
+  - name: Bober
+    uniqueID: 2794183899
+    locked: 0
+  - name: In front of Bober
+    uniqueID: 4191358677
+    locked: 0
+  - name: Foreground
+    uniqueID: 2960292033
+    locked: 0
+  - name: UI
+    uniqueID: 1305516763
+    locked: 0
+  m_RenderingLayers:
+  - Default
