@@ -1,0 +1,15 @@
+function M = get_mask(GxA, GyA, GxB, GyB)
+    h = size(GxA, 1);
+    w = size(GxA, 2);
+    M = zeros(h, w);
+
+    for y = 1:h
+        for x = 1:w
+            mag_GA = sqrt(GxA(y, x, :).^2 + GyA(y, x, :).^2);
+            mag_GB = sqrt(GxB(y, x, :).^2 + GyB(y, x, :).^2);
+            if summag_GA <= mag_GB
+                M(y, x) = 255;
+            end
+        end
+    end
+end

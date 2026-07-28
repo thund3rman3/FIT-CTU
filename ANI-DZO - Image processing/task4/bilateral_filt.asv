@@ -1,0 +1,47 @@
+function image_out = bilateral_filt( image, ksize, space_stddev, intensity_stddev )
+%BILATERAL Implementation of a bilateral filter using Gaussian functions
+% image:
+%   the input (noisy) grayscale image (2D array)
+% ksize:
+%   size of the filtering window (1x2 matrix)
+% space_stddev:
+%   standard deviation of the Gaussian over pixel distances
+% intensity_stddev:
+%   standard deviation of the Gaussian over pixel value distances
+
+%% TODO 5: implement Bilateral filter
+% - go through all image (x,y) and filter window (s,t) coordinates
+%   - do the DC padding as in your convolution_2D implementation
+% - for each coordinate quadruple (x,y,s,t) compute the space weight
+%   - Gaussian "G" over the distance of the current pixel (defined by 
+%     (x,y,s,t)) from the window center pixel (x,y)
+% - for each coordinate quadruple (x,y,s,t) compute the intensity weight
+%   - Gaussian "b" over the difference of the pixel values at the current
+%     pixel (defined by (x,y,s,t)) and the pixel at the window center (x,y)
+% - multiply the weights and the current pixel and sum these over
+%   the window
+% - normalize each output pixel by the sum of the corresponding weights
+
+    size_y = size(image,1);
+    size_x = size(image,2);
+    padsize = [floor(ksize(1)/2), floor(ksize(2)/2)];
+    
+    image_out = zeros(size(image));
+    image_padded = padarray(image, padsize, 'replicate', 'both');
+    
+    [s,t] = meshgrid(-padsize(2):padsize(2), -padsize(1):padsize(1));% #radek je y, #sloupcu je x
+    G = exp(-(s.^2 + t.^2) / (2 * space_stddev^2));
+
+    for x = 1:size_x
+        for y = 1:size_y
+            sub_image = image_padded(y:y+ksize(1)-1, x:x+ksize(2)-1);
+            b = exp(-((sub_image - image(y,x)).^2) / (2 * intensity_stddev^2));
+            
+            weights = G .* b;
+            sigma = sum(sum(weights.*sub_image));
+            weights_sum = sum(sum(weights));
+            image_out(y) = sigma / weights_sum;
+        end
+    end
+end
+
