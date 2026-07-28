@@ -1,0 +1,384 @@
+GGX w/o rays Time: 942 ms.
+Phong w/o rays Time: 865 ms.
+Phong w shadow rays Time: 1386 ms. // added shadow rays
+GGX w shadow rays Time: 1479 ms.
+Phong w depth 3, 3 rays Time: 5468 ms. // added shadow and secondary rays
+GGX w depth 3, 3 rays Time: 5546 ms.
+// cullback and other optimizations
+// dont send Reflected/transmitted rays if material is not reflective/transmissive
+Phong w depth 3, 3 rays Time: 2382 ms. 
+GGX w depth 3, 3 rays Time: 2552 ms.
+// remember to plug electricity source to notebook
+scenes/original GGX:0 Time: 1599.66 ms. - 1e-9
+	 Depth: 3; Rays:791.922kRays/s; INTERSECTIONS: 42246053
+	 Primary / Reflected / Refracted / Shadow rays: 640000 / 59596 / 0 / 567214
+scenes/original GGX:1 Time: 1640.11 ms. - 1e-9
+	 Depth: 3; Rays:772.392kRays/s; INTERSECTIONS: 42246053
+	 Primary / Reflected / Refracted / Shadow rays: 640000 / 59596 / 0 / 567214
+-----------------------------------------
+scenes/sphere/ GGX:1 Time: 287450 ms. - 1e-6
+	 Depth: 8; Rays:12.7056kRays/s; INTERSECTIONS: 3588386813
+	 Primary / Reflected / Refracted / Shadow rays: 640000 / 1215910 / 405160 / 1391146
+scenes/sphere/ GGX:1 Time: 316103 ms. - 1e-6-InvSq
+	 Depth: 8; Rays:11.9315kRays/s; INTERSECTIONS: 3830611560
+	 Primary / Reflected / Refracted / Shadow rays: 640000 / 1263817 / 441043 / 1426723
+scenes/sphere/ GGX:0 Time: 328296 ms. - 1e-6
+	 Depth: 8; Rays:11.4884kRays/s; INTERSECTIONS: 3830611560
+	 Primary / Reflected / Refracted / Shadow rays: 640000 / 1263817 / 441043 / 1426723
+scenes/sphere/ GGX:0 Time: 353448 ms.
+	 Depth: 8; Rays:10.6708kRays/s; INTERSECTIONS: 3830611560
+	 Primary / Reflected / Refracted / Shadow rays: 640000 / 1263817 / 441043 / 1426723
+scenes/sphere/ GGX:0 Time: 325190 ms. - Whitted RT
+	 Depth: 8; Rays:11.5981kRays/s; INTERSECTIONS: 3830611560
+	 Primary / Reflected / Refracted / Shadow rays: 640000 / 1263817 / 441043 / 1426723
+scenes/sphere/ GGX:0 Time: 310143 ms. - Fresnel
+	 Depth: 8; Rays:12.1608kRays/s; INTERSECTIONS: 3830611560
+	 Primary / Reflected / Refracted / Shadow rays: 640000 / 1263817 / 441043 / 1426723
+scenes/sphere/ GGX:1 Time: 302837 ms. - Fresnel
+	 Depth: 8; Rays:12.4542kRays/s; INTERSECTIONS: 3830611560
+	 Primary / Reflected / Refracted / Shadow rays: 640000 / 1263817 / 441043 / 1426723
+-----------------------------------------
+scenes/original GGX:1 Time: 29877.7 ms.- Area 32 samples
+	 Depth: 8; AL samples: 32; Rays:691.953kRays/s; INTERSECTIONS: 675016123
+	 Prim / Refl / Refr / Shad rays: 360000 / 33714 / 0 / 20280256
+scenes/original GGX:0 Time: 28867.7 ms.- Area 32 samples
+	 Depth: 8; AL samples: 32; Rays:716.162kRays/s; INTERSECTIONS: 675002415
+	 Prim / Refl / Refr / Shad rays: 360000 / 33714 / 0 / 20280256
+-----------------------------------------
+scenes/sphere/ GGX:0 Time: 390659 ms. - area
+	 Depth: 1; AL samples: 4; Rays:11.6299kRays/s; INTERSECTIONS: 1080995070
+	 Prim / Refl / Refr / Shad rays: 360000 / 233199 / 19539 / 3930584
+scenes/sphere/ GGX:0 Time: 4.01623e+06 ms. - area 32 samples
+	 Depth: 8; AL samples: 32; Rays:13.0754kRays/s; INTERSECTIONS: 3027617478
+	 Prim / Refl / Refr / Shad rays: 360000 / 709313 / 247898 / 51196672
+-----------------------------------------	 
+scenes/sphere/ GGX:0 Time: 172503 ms. - textured
+	 Depth: 1; AL samples: 2; Rays:9.47916kRays/s; INTERSECTIONS: 3484228266
+	 Prim / Refl / Refr / Shad rays: 360000 / 0 / 0 / 1275180
+scenes/LONG/ GGX:0 Time: 1271.57 ms. - NO MIPMAPS
+	 Depth: 0; AL samples: 1; Rays:784.531kRays/s; INTERSECTIONS: 27932408
+	 Prim / Refl / Refr / Shad rays: 360000 / 0 / 0 / 637586
+scenes/LONG/ GGX:0 Time: 1370.02 ms. - MIPMAPS
+	 Depth: 0; AL samples: 1; Rays:728.155kRays/s; INTERSECTIONS: 27932408
+	 Prim / Refl / Refr / Shad rays: 360000 / 0 / 0 / 637586
+scenes/sphere/ GGX:0 Time: 1.26009e+06 ms.
+	 Depth: 8; AL samples: 12; Rays:12.0058kRays/s; INTERSECTIONS: 1924732467
+	 Prim / Refl / Refr / Shad rays: 360000 / 333086 / 167654 / 14267688
+scenes/sphere/ GGX:0 Time: 1.02834e+06 ms.
+	 Depth: 8; AL samples: 12; Rays:10.6824kRays/s; INTERSECTIONS: 1757147213
+	 Prim / Refl / Refr / Shad rays: 360000 / 121895 / 0 / 10503264
+scenes/LONG/ GGX:0 Time: 11788.3 ms.
+	 Depth: 1; AL samples: 12; Rays:679.573kRays/s; INTERSECTIONS: 224308891
+	 Prim / Refl / Refr / Shad rays: 360000 / 0 / 0 / 7651032
+scenes/LONG/ GGX:0 Time: 17742.8 ms.
+	 Depth: 1; AL samples: 12; Rays:451.509kRays/s; INTERSECTIONS: 224308888
+	 Prim / Refl / Refr / Shad rays: 360000 / 0 / 0 / 7651032
+
+KDTREE
+scenes/sphere/ GGX:0 Time: 277128 ms. -KD-Tree
+	 Depth: 8; AL samples: 12; Rays:54.5331kRays/s; INTERSECTIONS: 0
+	 Prim / Refl / Refr / Shad rays: 360000 / 332963 / 168113 / 14251584
+scenes/sphere/ GGX:0 Time: 41182.3 ms. -O2 -KD-Tree
+	 Depth: 8; AL samples: 12; Rays:366.97kRays/s; INTERSECTIONS: 0
+	 Prim / Refl / Refr / Shad rays: 360000 / 332963 / 168113 / 14251584
+scenes/sphere/ GGX:0 Time: 2.11496e+06 ms. - no KD-Tree
+	 Depth: 8; AL samples: 12; Rays:7.1456kRays/s; INTERSECTIONS: 1894499811
+	 Prim / Refl / Refr / Shad rays: 360000 / 332963 / 168113 / 14251584
+
+scenes/sphere/ GGX:0 Time: 251890 ms. - REC build
+	 Depth: 8; AL samples: 12; Rays:59.997kRays/s; INTERSECTIONS: 0
+	 Prim / Refl / Refr / Shad rays: 360000 / 332963 / 168113 / 14251584
+	 Build time: 0.8765 ms; Avg ray traverse time: 0.0325002 ms; Avg shadow ray traverse time: 0.0147438 ms.
+scenes/sphere/ GGX:0 Time: 32967.2 ms. - SAH build
+	 Depth: 8; AL samples: 12; Rays:458.416kRays/s; INTERSECTIONS: 0
+	 Prim / Refl / Refr / Shad rays: 360000 / 332978 / 168113 / 14251584
+	 Build time: 99.7522 ms; Avg ray traverse time: 0.00275153 ms; Avg shadow ray traverse time: 0.00170041 ms.
+
+scenes/sphere/; GGX:0 = tree max depth 64
+	 Time: 37995.1 ms.
+	 Scene AABB: Min(-1.02, 0, -1.04) Max(1, 2, 0.99)
+	 Loaded 2188 triangles, 8 materials, 2 light sources.
+	 Ray tracing stats: 
+		 Depth: 8; AL samples: 12
+		 Rays: 397.753kRays/s; INTERSECTIONS tried: 429590945
+		 Prim / Refl / Refr / Shad rays: 360000 / 332978 / 168113 / 14251584
+	 KD-Tree build stats: 
+		 Build time: 263.408 ms; Number of nodes: 32467 (16233 internal, 16234 leaf) 
+		 Depth: min 4; max 30; avg 19.2587
+		 Tris per leaf: min 1; max 36; avg 6.16219
+		 Memory usage: 898.066 KB 
+	 KD-Tree traversal stats: 
+		 Incidences in one traversal - min: 0; max: 389; avg: 28.4611
+		 Traversal operations count in one traversal - min: 0; max 288; avg 24.8464
+		 Avg ray traverse time: 0.00327967 ms; Avg shadow ray traverse time: 0.00191494 ms.
+		 Min ray traverse time: 0 ms; Max ray traverse time: 0.3398 ms.
+		 Depth of traversal - min: 0; max: 13; avg: 3.0081
+scenes/sphere/; GGX:0
+	 Time: 94176.2 ms.
+	 Scene AABB: Min(-1.02, 0, -1.04) Max(1, 2, 0.99)
+	 Loaded 2188 triangles, 8 materials, 2 light sources.
+	 Ray tracing stats: 
+		 Depth: 8; AL samples: 32
+		 Rays: 412.687kRays/s; INTERSECTIONS tried: 1095704467
+		 Prim / Refl / Refr / Shad rays: 360000 / 332978 / 168113 / 38004224
+	 KD-Tree build stats: 
+		 Build time: 262.042 ms; Number of nodes: 32467 (16233 internal, 16234 leaf) 
+		 Depth: min 4; max 30; avg 19.2587
+		 Tris per leaf: min 1; max 36; avg 6.16219
+		 Memory usage: 898.066 KB 
+	 KD-Tree traversal stats: 
+		 Incidences in one traversal - min: 0; max: 389; avg: 24.4956
+		 Traversal operations count in one traversal - min: 0; max 288; avg 20.2622
+		 Avg ray traverse time: 0.00326763 ms; Avg shadow ray traverse time: 0.00378103 ms.
+		 Min ray traverse time: 0 ms; Max ray traverse time: 3.3241 ms.
+		 Depth of traversal - min: 0; max: 13; avg: 2.42834
+
+scenes/sphere/; GGX:1
+	 Time: 91378.8 ms.
+	 Scene AABB: Min(-1.02, 0, -1.04) Max(1, 2, 0.99)
+	 Loaded 2188 triangles, 8 materials, 2 light sources.
+	 Ray tracing stats: 
+		 Depth: 8; AL samples: 32
+		 Rays: 425.321kRays/s; INTERSECTIONS tried: 1095696856
+		 Prim / Refl / Refr / Shad rays: 360000 / 332978 / 168113 / 38004224
+	 KD-Tree build stats: 
+		 Build time: 265.873 ms; Number of nodes: 32467 (16233 internal, 16234 leaf) 
+		 Depth: min 4; max 30; avg 19.2587
+		 Tris per leaf: min 1; max 36; avg 6.16219
+		 Memory usage: 898.066 KB 
+	 KD-Tree traversal stats: 
+		 Incidences in one traversal - min: 0; max: 389; avg: 24.4978
+		 Traversal operations count in one traversal - min: 0; max 288; avg 20.2612
+		 Avg ray traverse time: 0.00307681 ms; Avg shadow ray traverse time: 0.00366108 ms.
+		 Min ray traverse time: 0 ms; Max ray traverse time: 0.7413 ms.
+		 Depth of traversal - min: 0; max: 13; avg: 2.42825
+
+scenes/dragon/; GGX:0
+	 Time: 200398 ms.
+	 Scene AABB: Min(-1.02, -0, -1.04) Max(1, 2, 0.99)
+	 Loaded 871318 triangles, 7 materials, 2 light sources.
+	 Ray tracing stats: 
+		 Depth: 8; AL samples: 32
+		 Rays: 240.921kRays/s; INTERSECTIONS tried: 1851540629
+		 Prim / Refl / Refr / Shad rays: 360000 / 540735 / 0 / 47379456
+	 KD-Tree build stats: 
+		 Build time: 245351 ms; Number of nodes: 19773123 (9886561 internal, 9886562 leaf) 
+		 Depth: min 6; max 59; avg 33.2597
+		 Tris per leaf: min 1; max 28; avg 5.04027
+		 Memory usage: 503607 KB 
+	 KD-Tree traversal stats: 
+		 Incidences in one traversal - min: 0; max: 1137; avg: 31.4698
+		 Traversal operations count in one traversal - min: 0; max 1375; avg 46.667
+		 Avg ray traverse time: 0.00467763 ms; Avg shadow ray traverse time: 0.00870336 ms.
+		 Min ray traverse time: 0 ms; Max ray traverse time: 3.0414 ms.
+		 Depth of traversal - min: 0; max: 23; avg: 3.89924
+scenes/dragon/; GGX:1 800x800
+	 Time: 296264 ms.
+	 Scene AABB: Min(-1.02, -0, -1.04) Max(1, 2, 0.99)
+	 Loaded 871318 triangles, 7 materials, 2 light sources.
+	 Ray tracing stats: 
+		 Depth: 8; AL samples: 32
+		 Rays: 226.236kRays/s; INTERSECTIONS tried: 2550881521
+		 Prim / Refl / Refr / Shad rays: 640000 / 531008 / 0 / 65854464
+	 KD-Tree build stats: 
+		 Build time: 164861 ms; Number of nodes: 19773123 (9886561 internal, 9886562 leaf) 
+		 Depth: min 6; max 59; avg 33.2597
+		 Tris per leaf: min 1; max 28; avg 5.04027
+		 Memory usage: 503607 KB 
+	 KD-Tree traversal stats: 
+		 Incidences in one traversal - min: 0; max: 1210; avg: 28.0852
+		 Traversal operations count in one traversal - min: 0; max 1444; avg 39.8386
+		 Avg ray traverse time: 0.00461665 ms; Avg shadow ray traverse time: 0.0111863 ms.
+		 Min ray traverse time: 0 ms; Max ray traverse time: 2.8042 ms.
+		 Depth of traversal - min: 0; max: 23; avg: 3.53133
+scenes/sphere/; GGX:1 - 800x800
+	 Time: 173072 ms.
+	 Scene AABB: Min(-1.02, 0, -1.04) Max(1, 2, 0.99)
+	 Loaded 2188 triangles, 8 materials, 2 light sources.
+	 Ray tracing stats: 
+		 Depth: 8; AL samples: 32
+		 Rays: 400.284kRays/s; INTERSECTIONS tried: 1941417070
+		 Prim / Refl / Refr / Shad rays: 640000 / 592414 / 298894 / 67746496
+	 KD-Tree build stats: 
+		 Build time: 271.228 ms; Number of nodes: 32467 (16233 internal, 16234 leaf) 
+		 Depth: min 4; max 30; avg 19.2587
+		 Tris per leaf: min 1; max 36; avg 6.16219
+		 Memory usage: 898.066 KB 
+	 KD-Tree traversal stats: 
+		 Incidences in one traversal - min: 0; max: 359; avg: 18.4966
+		 Traversal operations count in one traversal - min: 0; max 255; avg 15.8255
+		 Avg ray traverse time: 0.0031877 ms; Avg shadow ray traverse time: 0.00498836 ms.
+		 Min ray traverse time: 0 ms; Max ray traverse time: 1.7996 ms.
+		 Depth of traversal - min: 0; max: 14; avg: 1.93749
+scenes/bunny/; GGX:1
+	 Time: 89444.9 ms.
+	 Scene AABB: Min(-1.02, -0, -1.04) Max(1, 2, 0.99)
+	 Loaded 69463 triangles, 7 materials, 2 light sources.
+	 Ray tracing stats: 
+		 Depth: 8; AL samples: 32
+		 Rays: 417.704kRays/s; INTERSECTIONS tried: 1032384014
+		 Prim / Refl / Refr / Shad rays: 360000 / 392804 / 0 / 36608704
+	 KD-Tree build stats: 
+		 Build time: 12132.4 ms; Number of nodes: 1885477 (942738 internal, 942739 leaf) 
+		 Depth: min 5; max 47; avg 31.5396
+		 Tris per leaf: min 1; max 13; avg 4.50869
+		 Memory usage: 46064.2 KB 
+	 KD-Tree traversal stats: 
+		 Incidences in one traversal - min: 0; max: 422; avg: 28.7472
+		 Traversal operations count in one traversal - min: 0; max 538; avg 29.821
+		 Avg ray traverse time: 0.00168288 ms; Avg shadow ray traverse time: 0.00408019 ms.
+		 Min ray traverse time: 0 ms; Max ray traverse time: 0.5533 ms.
+		 Depth of traversal - min: 0; max: 17; avg: 2.24086
+scenes/dragon/; GGX:1
+	 Time: 184352 ms.
+	 Scene AABB: Min(-1.02, -0, -1.04) Max(1, 2, 0.99)
+	 Loaded 871318 triangles, 7 materials, 2 light sources.
+	 Ray tracing stats: 
+		 Depth: 8; AL samples: 32
+		 Rays: 261.881kRays/s; INTERSECTIONS tried: 1834574019
+		 Prim / Refl / Refr / Shad rays: 360000 / 540625 / 0 / 47377664
+	 KD-Tree build stats: 
+		 Build time: 161909 ms; Number of nodes: 19773123 (9886561 internal, 9886562 leaf) 
+		 Depth: min 6; max 59; avg 33.2597
+		 Tris per leaf: min 1; max 28; avg 5.04027
+		 Memory usage: 503607 KB 
+	 KD-Tree traversal stats: 
+		 Incidences in one traversal - min: 0; max: 1134; avg: 31.1885
+		 Traversal operations count in one traversal - min: 0; max 1290; avg 46.293
+		 Avg ray traverse time: 0.00424944 ms; Avg shadow ray traverse time: 0.00813109 ms.
+		 Min ray traverse time: 0 ms; Max ray traverse time: 0.9592 ms.
+		 Depth of traversal - min: 0; max: 23; avg: 3.88846
+scenes/bunny/; GGX:0
+	 Time: 123769 ms.
+	 Scene AABB: Min(-1.02, -0, -1.04) Max(1, 2, 0.99)
+	 Loaded 69463 triangles, 7 materials, 2 light sources.
+	 Ray tracing stats: 
+		 Depth: 8; AL samples: 32
+		 Rays: 301.866kRays/s; INTERSECTIONS tried: 1032487210
+		 Prim / Refl / Refr / Shad rays: 360000 / 392804 / 0 / 36608704
+	 KD-Tree build stats: 
+		 Build time: 25915.3 ms; Number of nodes: 1885477 (942738 internal, 942739 leaf) 
+		 Depth: min 5; max 47; avg 31.5396
+		 Tris per leaf: min 1; max 13; avg 4.50869
+		 Memory usage: 46064.2 KB 
+	 KD-Tree traversal stats: 
+		 Incidences in one traversal - min: 0; max: 422; avg: 28.7472
+		 Traversal operations count in one traversal - min: 0; max 527; avg 29.8245
+		 Avg ray traverse time: 0.0023645 ms; Avg shadow ray traverse time: 0.00514683 ms.
+		 Min ray traverse time: 0 ms; Max ray traverse time: 12.5067 ms.
+		 Depth of traversal - min: 0; max: 17; avg: 2.24102
+scenes/bunny/; GGX:0
+	 Time: 144430 ms.
+	 Scene AABB: Min(-1.02, -0, -1.04) Max(1, 2, 0.99)
+	 Loaded 69463 triangles, 7 materials, 2 light sources.
+	 Ray tracing stats: 
+		 Depth: 8; AL samples: 32
+		 Rays: 258.683kRays/s; INTERSECTIONS tried: 1032445001
+		 Prim / Refl / Refr / Shad rays: 360000 / 392804 / 0 / 36608704
+	 KD-Tree build stats: 
+		 Build time: 26895.6 ms; Number of nodes: 1885477 (942738 internal, 942739 leaf) 
+		 Depth: min 5; max 47; avg 31.5396
+		 Tris per leaf: min 1; max 13; avg 4.50869
+		 Memory usage: 46064.2 KB 
+	 KD-Tree traversal stats: 
+		 Incidences in one traversal - min: 0; max: 422; avg: 28.7469
+		 Traversal operations count in one traversal - min: 0; max 534; avg 29.8251
+		 Avg ray traverse time: 0.00267472 ms; Avg shadow ray traverse time: 0.00552317 ms.
+		 Min ray traverse time: 0 ms; Max ray traverse time: 15.8328 ms.
+		 Depth of traversal - min: 0; max: 17; avg: 2.24105
+
+scenes/sphere/; GGX:0
+	 Time: 12833.1 ms.
+	 Scene AABB: Min(-1.02, 0, -1.04) Max(1, 2, 0.99)
+	 Loaded 2188 triangles, 8 materials, 2 light sources.
+	 Ray tracing stats: 
+		 Depth: 8; AL samples: 32
+		 Rays: 3028.69kRays/s; INTERSECTIONS tried: 1088089909
+		 Prim / Refl / Refr / Shad rays: 360000 / 332966 / 168131 / 38006272
+	 KD-Tree build stats: 
+		 Build time: 50.2331 ms; Number of nodes: 32467 (16233 internal, 16234 leaf) 
+		 Depth: min 4; max 30; avg 19.2587
+		 Tris per leaf: min 1; max 36; avg 6.16219
+		 Memory usage: 898.066 KB 
+	 KD-Tree traversal stats: 
+		 Incidences in one traversal - min: 0; max: 389; avg: 24.2981
+		 Traversal operations count in one traversal - min: 0; max 288; avg 20.0183
+		 Avg ray traverse time: 0.000566392 ms; Avg shadow ray traverse time: 0.000416582 ms.
+		 Min ray traverse time: 1.9e-05 ms; Max ray traverse time: 0.142262 ms.
+		 Depth of traversal - min: 0; max: 13; avg: 2.42246
+scenes/sphere/; GGX:0
+	 Time: 11771.3 ms.
+	 Scene AABB: Min(-1.02, 0, -1.04) Max(1, 2, 0.99)
+	 Loaded 2188 triangles, 8 materials, 2 light sources.
+	 Ray tracing stats: 
+		 Depth: 8; AL samples: 32
+		 Rays: 3301.88kRays/s; INTERSECTIONS tried: 1088030742
+		 Prim / Refl / Refr / Shad rays: 360000 / 332966 / 168131 / 38006272
+	 KD-Tree build stats: 
+		 Build time: 35.6164 ms; Number of nodes: 32467 (16233 internal, 16234 leaf) 
+		 Depth: min 4; max 30; avg 19.2587
+		 Tris per leaf: min 1; max 36; avg 6.16219
+		 Memory usage: 898.066 KB 
+	 KD-Tree traversal stats: 
+		 Incidences in one traversal - min: 0; max: 389; avg: 24.295
+		 Traversal operations count in one traversal - min: 0; max 288; avg 20.0165
+		 Avg ray traverse time: 0.000555078 ms; Avg shadow ray traverse time: 0.000386865 ms.
+		 Min ray traverse time: 1.9e-05 ms; Max ray traverse time: 0.177088 ms.
+		 Depth of traversal - min: 0; max: 13; avg: 2.42252
+scenes/sphere/; GGX:0
+	 Time: 11887.5 ms.
+	 Scene AABB: Min(-1.02, 0, -1.04) Max(1, 2, 0.99)
+	 Loaded 2188 triangles, 8 materials, 2 light sources.
+	 Ray tracing stats: 
+		 Depth: 8; AL samples: 32
+		 Rays: 3269.61kRays/s; INTERSECTIONS tried: 1087965651
+		 Prim / Refl / Refr / Shad rays: 360000 / 332966 / 168131 / 38006272
+	 KD-Tree build stats: 
+		 Build time: 34.0431 ms; Number of nodes: 32467 (16233 internal, 16234 leaf) 
+		 Depth: min 4; max 30; avg 19.2587
+		 Tris per leaf: min 1; max 36; avg 6.16219
+		 Memory usage: 898.066 KB 
+	 KD-Tree traversal stats: 
+		 Incidences in one traversal - min: 0; max: 389; avg: 24.2942
+		 Traversal operations count in one traversal - min: 0; max 288; avg 20.016
+		 Avg ray traverse time: 0.000555677 ms; Avg shadow ray traverse time: 0.000389745 ms.
+		 Min ray traverse time: 1.9e-05 ms; Max ray traverse time: 0.275628 ms.
+		 Depth of traversal - min: 0; max: 13; avg: 2.42228
+scenes/sphere/; GGX:0
+	 Time: 16278.2 ms.
+	 Scene AABB: Min(-1.02, 0, -1.04) Max(1, 2, 0.99)
+	 Loaded 2188 triangles, 8 materials, 2 light sources.
+	 Ray tracing stats: 
+		 Depth: 8; AL samples: 32
+		 Rays: 2387.69kRays/s; INTERSECTIONS tried: 1087994195
+		 Prim / Refl / Refr / Shad rays: 360000 / 332966 / 168131 / 38006272
+	 KD-Tree build stats: 
+		 Build time: 47.8847 ms; Number of nodes: 32467 (16233 internal, 16234 leaf) 
+		 Depth: min 4; max 30; avg 19.2587
+		 Tris per leaf: min 1; max 36; avg 6.16219
+		 Memory usage: 898.066 KB 
+	 KD-Tree traversal stats: 
+		 Incidences in one traversal - min: 0; max: 389; avg: 24.296
+		 Traversal operations count in one traversal - min: 0; max 288; avg 20.0167
+		 Avg ray traverse time: 0.000675843 ms; Avg shadow ray traverse time: 0.000546997 ms.
+		 Min ray traverse time: 1.9e-05 ms; Max ray traverse time: 2.61471 ms.
+		 Depth of traversal - min: 0; max: 13; avg: 2.42233
+scenes/sphere/; GGX:0
+	 Time: 504971 ms.
+	 Scene AABB: Min(-1.02, 0, -1.04) Max(1, 2, 0.99)
+	 Loaded 2188 triangles, 8 materials, 2 light sources.
+	 Ray tracing stats: 
+		 Depth: 8; AL samples: 32
+		 Rays: 76.9694kRays/s; INTERSECTIONS tried: 1088056932
+		 Prim / Refl / Refr / Shad rays: 360000 / 332966 / 168131 / 38006272
+	 KD-Tree build stats: 
+		 Build time: 960.212 ms; Number of nodes: 32467 (16233 internal, 16234 leaf) 
+		 Depth: min 4; max 30; avg 19.2587
+		 Tris per leaf: min 1; max 36; avg 6.16219
+		 Memory usage: 898.066 KB 
+	 KD-Tree traversal stats: 
+		 Incidences in one traversal - min: 0; max: 389; avg: 24.2967
+		 Traversal operations count in one traversal - min: 0; max 288; avg 20.0163
+		 Avg ray traverse time: 0.0138625 ms; Avg shadow ray traverse time: 0.0184612 ms.
+		 Min ray traverse time: 0.00107 ms; Max ray traverse time: 4.07992 ms.
+		 Depth of traversal - min: 0; max: 13; avg: 2.42249

@@ -1,0 +1,17 @@
+{
+    "WIDTH": 800,
+    "HEIGHT": 800,
+    "scenePath": "scenes/bunny/Bunny.obj",
+    "mtlPath": "scenes/bunny/",
+    "CAMERA": {
+        "pos": [0.0, 1.0, 4.42],
+        "up":  [0.0, 1.0, 0.0],
+        "dir": [0.0, 0.0, -1.0],
+        "fov": 0.6
+    },
+    "DMAX": 8,
+    "LIGHT_SAMPLES": 32,
+    "GGX": false, 
+    "EXPOSURE": 1.25,
+    "DIST": 6.0
+}

@@ -1,0 +1,22 @@
+name = "Ray Tracer"
+author = "Josef Jech"
+description = "C++ CPU ray tracer using Kd-Tree and GGX / Phong BRDF"
+
+
+cpp             = 20
+theme           = 'dark'
+
+navbar          = [ 'annotated', 'files' ] 
+
+[warnings]
+enabled         = true
+treat_as_errors = false
+undocumented    = false 
+
+#
+[sources]
+recursive_paths = [ 'src' ]
+
+patterns        = [ '*.h', '*.hpp', '*.cpp' ]
+
+strip_paths     = [ 'src' ]
