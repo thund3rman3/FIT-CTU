@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Three.js Specular BRDF</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        canvas { display: block; }
+    </style>
+
+    <!-- Import map for Three.js -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.183.1/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.1/examples/jsm/"
+        }
+    }
+    </script>
+</head>
+<body>
+
+<!-- Vertex Shader -->
+<script id="vertexShader" type="x-shader/x-vertex">
+out vec2 vUv;
+out vec3 vWorldPos;    // fragment position in world space
+out vec3 vWorldNormal; // surface normal in world space
+
+void main() {
+    vUv = uv;
+
+    // modelMatrix converts object space → world space
+    vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+    vWorldPos = worldPosition.xyz;
+
+    // We need world-space normals to match our world-space light position.
+    vWorldNormal = normalize(mat3(modelMatrix) * normal);
+
+    gl_Position = projectionMatrix * viewMatrix * worldPosition;
+}
+</script>
+
+
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+const fragmentResponse = await fetch('./fragment.glsl');
+const fragmentShaderCode = await fragmentResponse.text();
+
+// Scene
+const scene = new THREE.Scene();
+
+// Camera
+const camera = new THREE.PerspectiveCamera(
+    60,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    100
+);
+camera.position.set(2, 2, 2.5);
+
+// Renderer
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// OrbitControls
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+
+// Geometry (UV mapped plane)
+const geometry = new THREE.PlaneGeometry(2, 2, 100, 100);
+
+// Shader uniforms
+const uniforms = {
+    base_color: { value: new THREE.Color(0.420, 0.416, 0.353) },
+    sec_color: { value: new THREE.Color(0.439,0.373,0.188) },
+    gap_color: { value: new THREE.Color(0.353, 0.349, 0.297) },
+    scale:    { value: 6.8 },
+    black_stain_scale:    { value: 10.6 },
+    white_stain_scale:    { value: 70.0 },
+    tile_size:    { value: 0.98 },
+    randomness:    { value: 13.4 },
+
+    uLightPos:       { value: new THREE.Vector3(0.0, 0.5, 0.6) },
+    uLightColor:     { value: new THREE.Color('#ffffff') },
+    uLightIntensity: { value: 5.0 },
+    uAmbient:        { value: 0.05 },
+    uLightEnabled:   { value: true },
+    uSpec:           { value: 0.5 },
+};
+
+// Shader material
+const material = new THREE.ShaderMaterial({
+    uniforms: uniforms,
+    vertexShader: document.getElementById('vertexShader').textContent,
+    fragmentShader: fragmentShaderCode,
+    side: THREE.OneSided,
+    glslVersion: THREE.GLSL3,
+});
+
+// Mesh
+const plane = new THREE.Mesh(geometry, material);
+scene.add(plane);
+
+// Light indicator: small unlit sphere at the light's world position.
+// MeshBasicMaterial is never shaded, so it always appears as a bright dot.
+const lightSphereGeo = new THREE.SphereGeometry(0.05, 16, 16);
+const lightSphereMat = new THREE.MeshBasicMaterial({ color: uniforms.uLightColor.value });
+const lightSphere = new THREE.Mesh(lightSphereGeo, lightSphereMat);
+lightSphere.position.copy(uniforms.uLightPos.value);
+scene.add(lightSphere);
+
+function syncLightSphere() {
+    lightSphere.position.copy(uniforms.uLightPos.value);
+}
+
+// GUI
+const gui = new GUI();
+
+const albedoFolder = gui.addFolder('Albedo');
+albedoFolder.addColor(uniforms.base_color, 'value').name('Base Color');
+albedoFolder.addColor(uniforms.sec_color, 'value').name('Secondary Color');
+albedoFolder.addColor(uniforms.gap_color, 'value').name('Gap Color');
+albedoFolder.add(uniforms.scale, 'value', 1.0, 50.0, 0.001)
+   .name('Scale');
+albedoFolder.add(uniforms.black_stain_scale, 'value', 1.0, 50.0, 0.001)
+   .name('Scale black stains');
+albedoFolder.add(uniforms.white_stain_scale, 'value', 1.0, 200.0, 0.1)
+   .name('Scale white dots');
+albedoFolder.add(uniforms.tile_size, 'value', 0.0, 1.0, 0.01)
+   .name('Tile size');
+albedoFolder.add(uniforms.randomness, 'value', 1.0, 100.0, 0.1)
+   .name('Randomness');
+albedoFolder.open();
+
+// lil-gui can't bind directly to a THREE.Vector3, so we use a proxy object
+// with separate x/y/z fields and write back into the uniform on change.
+const lightParams = {
+    x: uniforms.uLightPos.value.x,
+    y: uniforms.uLightPos.value.y,
+    z: uniforms.uLightPos.value.z,
+};
+const lightFolder = gui.addFolder('Light');
+lightFolder.add(uniforms.uLightEnabled, 'value').name('Enabled')
+    .onChange(v => { lightSphere.visible = v; });
+lightFolder.add(lightParams, 'x', -3, 3, 0.01).name('Position X')
+    .onChange(v => { uniforms.uLightPos.value.x = v; syncLightSphere(); });
+lightFolder.add(lightParams, 'y', -3, 3, 0.01).name('Position Y')
+    .onChange(v => { uniforms.uLightPos.value.y = v; syncLightSphere(); });
+lightFolder.add(lightParams, 'z', -3, 3, 0.01).name('Position Z')
+    .onChange(v => { uniforms.uLightPos.value.z = v; syncLightSphere(); });
+lightFolder.addColor(uniforms.uLightColor, 'value').name('Color')
+    .onChange(() => { lightSphereMat.color.copy(uniforms.uLightColor.value); });
+lightFolder.add(uniforms.uLightIntensity, 'value', 0.1, 20, 0.1).name('Intensity');
+lightFolder.add(uniforms.uAmbient, 'value', 0, 1, 0.01).name('Ambient');
+lightFolder.add(uniforms.uSpec, 'value', 0.0, 2.0, 0.1).name('Specular');
+lightFolder.open();
+
+// Resize handling
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// Animation loop
+function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene, camera);
+}
+animate();
+
+</script>
+
+</body>
+</html>

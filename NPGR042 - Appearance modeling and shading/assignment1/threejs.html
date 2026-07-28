@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Three.js UV Shader Plane</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        canvas { display: block; }
+    </style>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.183.1/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.1/examples/jsm/"
+        }
+    }
+    </script>
+</head>
+<body>
+
+<script id="vertexShader" type="x-shader/x-vertex">
+varying vec2 vUv;
+
+void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+const fragmentResponse = await fetch('./fragment.glsl');
+const fragmentShaderCode = await fragmentResponse.text();
+
+const scene = new THREE.Scene();
+
+const camera = new THREE.PerspectiveCamera(
+    60,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    100
+);
+camera.position.set(0, 1.5, 2.5);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+
+const geometry = new THREE.PlaneGeometry(2, 2, 100, 100);
+
+const uniforms = {
+    base_color: { value: new THREE.Color(0.420, 0.416, 0.353) },
+    sec_color: { value: new THREE.Color(0.439,0.373,0.188) },
+    gap_color: { value: new THREE.Color(0.353, 0.349, 0.297) },
+    scale:    { value: 6.8 },
+    black_stain_scale:    { value: 10.6 },
+    white_stain_scale:    { value: 70.0 },
+    tile_size:    { value: 0.98 },
+    randomness:    { value: 13.4 },
+};
+
+const material = new THREE.ShaderMaterial({
+    uniforms: uniforms,
+    vertexShader: document.getElementById('vertexShader').textContent,
+    fragmentShader: fragmentShaderCode,
+    side: THREE.DoubleSide
+});
+
+const plane = new THREE.Mesh(geometry, material);
+scene.add(plane);
+
+const gui = new GUI();
+
+gui.addColor(uniforms.base_color, 'value').name('Base Color');
+gui.addColor(uniforms.sec_color, 'value').name('Secondary Color');
+gui.addColor(uniforms.gap_color, 'value').name('Gap Color');
+gui.add(uniforms.scale, 'value', 1.0, 50.0, 0.001)
+   .name('Scale');
+gui.add(uniforms.black_stain_scale, 'value', 1.0, 50.0, 0.001)
+   .name('Scale black stains');
+gui.add(uniforms.white_stain_scale, 'value', 1.0, 200.0, 0.1)
+   .name('Scale white dots');
+gui.add(uniforms.tile_size, 'value', 0.0, 1.0, 0.01)
+   .name('Tile size');
+gui.add(uniforms.randomness, 'value', 1.0, 100.0, 0.1)
+   .name('Randomness');
+
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene, camera);
+}
+animate();
+
+</script>
+
+</body>
+</html>

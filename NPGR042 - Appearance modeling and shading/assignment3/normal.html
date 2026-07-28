@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Three.js Specular BRDF, Normals</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        canvas { display: block; }
+    </style>
+
+    <!-- Import map for Three.js -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.183.1/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.183.1/examples/jsm/"
+        }
+    }
+    </script>
+</head>
+<body>
+
+<!-- Vertex Shader -->
+<script id="vertexShader" type="x-shader/x-vertex">
+out vec2 vUv;
+out vec3 vWorldPos;    // fragment position in world space
+out vec3 vWorldNormal; // surface normal in world space
+
+in vec4 tangent; // built-in: xyz = tangent direction, w = handedness (+1 or -1)
+out vec4 vWorldTangent; // surface tangent in world space (U direction)
+
+uniform float scale;
+uniform float black_stain_scale;
+uniform float white_stain_scale;
+
+uniform float tile_size;
+uniform float randomness;
+
+uniform float displacementScale;
+
+ struct HexTile{
+        vec2 _vec;
+        float _uniform;
+        float _random;
+    };
+
+    struct HexGrid{
+        vec3 _colorUni;
+        vec3 _colorRnd;
+        float _maskUni;
+    };
+
+    vec2 snap(vec2 uv, vec2 increment) {
+        return floor(uv / increment) * increment;
+    }
+
+    float whiteNoise4D(vec4 p4) {
+        float n = dot(p4, vec4(12.9898, 78.233, 45.164, 94.673));
+        return fract(sin(n) * 43758.5453123);
+    }
+
+    HexTile rowOfHexagons(vec2 input_div, vec2 input_vec, vec2 scale, float tile_size, float randomness) {
+        vec2 r_ms = vec2(mod(scale, input_vec) - input_div);
+        float r_nd = dot(normalize(input_vec), abs(r_ms));
+        float r_am = max(abs(r_ms).x, r_nd);
+        float hex = (r_am < (tile_size/2.0)) ? 1.0 : 0.0;
+
+        vec2 snapped = snap(scale, input_vec);
+        float white_noise = whiteNoise4D(vec4(snapped, 1234.56, randomness));
+        
+        return HexTile(vec2(hex) * r_ms , hex, white_noise * hex);
+    }
+
+    HexGrid hexagonGrid(vec2 Uv, float scale, float tile_size, float randomness){
+        vec2 scaled_uv = Uv * scale;
+        vec2 input_vec = vec2(1.0,sqrt(3.0));
+        vec2 input_div = input_vec/2.0;
+        vec2 translated_scale = input_div + scaled_uv;
+
+        HexTile row_even = rowOfHexagons(input_div, input_vec, scaled_uv, tile_size, randomness);
+        HexTile row_odd = rowOfHexagons(input_div, input_vec, translated_scale, tile_size, randomness);
+
+        vec3 color = vec3(row_even._vec + row_odd._vec, 0.0);
+        float border_uni = row_even._uniform + row_odd._uniform;
+        float border_rnd = row_even._random + row_odd._random;
+        vec3 rnd_field = color + vec3(border_rnd);
+
+        return HexGrid(color, rnd_field, border_uni);
+    }
+
+        // random in 0-1 
+    vec2 hash22_voronoi(vec2 p) {
+        p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
+        return fract(sin(p) * 43758.5453123); 
+    }
+
+    // Blender "Smooth Min" func
+    float blender_smooth_min(float a, float b, float c) {
+        if (c <= 0.0) return min(a, b);
+        float h = max(c - abs(a - b), 0.0) / c;
+        return min(a, b) - h * h * h * c * (1.0 / 6.0);
+    }
+
+    // Blender voronoi smooth f1 2D euklidean dist
+    void node_tex_voronoi_smooth_f1_2d(
+        vec3 coord, 
+        float scale, 
+        float detail, 
+        float roughness, 
+        float lacunarity, 
+        float smoothness, 
+        float randomness, 
+        float normalize_val, 
+        out float outDistance, 
+        out vec4 outColor, 
+        out vec3 outPosition, 
+        out float outW, 
+        out float outRadius
+    ) {
+        float safe_detail = clamp(detail, 0.0, 15.0);
+        float safe_roughness = clamp(roughness, 0.0, 1.0);
+        float safe_smoothness = clamp(smoothness / 2.0, 0.0, 0.5); 
+        float safe_randomness = clamp(randomness, 0.0, 1.0);
+        bool do_normalize = (normalize_val != 0.0);
+
+        vec2 p = coord.xy * scale;
+
+        float f = 0.0;
+        float amp = 1.0;
+        float max_amp = 0.0;
+        int octaves = int(clamp(ceil(safe_detail), 1.0, 16.0));
+
+        for (int i = 0; i < 16; i++) {
+            if (i >= octaves) break;
+
+            float current_amp = amp;
+            if (i == octaves - 1 && fract(safe_detail) != 0.0) {
+                current_amp *= fract(safe_detail);
+            }
+
+            vec2 cell = floor(p);
+            vec2 fract_pos = p - cell;
+            float min_dist = 8.0; 
+
+            for (int y = -1; y <= 1; y++) {
+                for (int x = -1; x <= 1; x++) {
+                    vec2 neighbor = vec2(float(x), float(y));
+                    
+                    vec2 rand_pos = hash22_voronoi(cell + neighbor);
+                    vec2 point = mix(vec2(0.5), rand_pos, safe_randomness);
+                    
+                    vec2 diff = neighbor + point - fract_pos;
+                    float dist = length(diff);
+                    
+                    min_dist = blender_smooth_min(min_dist, dist, safe_smoothness);
+                }
+            }
+
+            f += min_dist * current_amp;
+            max_amp += current_amp;
+
+            amp *= safe_roughness;
+            p *= lacunarity;
+        }
+
+        if (do_normalize) {
+            float max_distance = 0.5 + 0.5 * safe_randomness; 
+            outDistance = f / (max_amp * max_distance);
+        } else {
+            outDistance = f;
+        }
+
+        outColor = vec4(outDistance, outDistance, outDistance, 1.0);
+        outPosition = vec3(0.0);
+        outW = 0.0;
+        outRadius = 0.0;
+    }
+
+float getNeighbor(vec2 uv) {
+    HexGrid hex_grid = hexagonGrid(uv, scale, tile_size, randomness);
+
+    vec3 white = vec3(1.0);
+    vec3 black = vec3(0.0);
+
+    float outDistance;
+    vec4 outColor;
+    vec3 outPosition;
+    float outW;
+    float outRadius;
+
+    node_tex_voronoi_smooth_f1_2d(
+        vec3(uv,0.0),//     vec3 coord, 
+        white_stain_scale,// float scale, 
+        13.9,// float detail, 
+        0.203,// float roughness, 
+        2.0,// float lacunarity, 
+        1.0,// float smoothness, 
+        1.0,// float randomness, 
+        1.0,// float normalize_val, 
+        outDistance,// out float outDistance, 
+        outColor,// out vec4 outColor, 
+        outPosition,// out vec3 outPosition, 
+        outW,// out float outW, 
+        outRadius// out float outRadius
+    );//white dots
+
+    float ramped3 = 1.0 - smoothstep(0.0, 0.150, outDistance);
+
+    float clamped_mask = 1.0 - smoothstep(0.0, 0.05, hex_grid._maskUni);
+
+    float add_masks = clamp(clamped_mask + ramped3, 0.0, 1.0);
+
+    return (1.0 - clamped_mask) - ramped3;
+    //return clamp(1.0 - add_masks, 0.0, 1.0);
+    //return add_masks;
+}
+
+void main() {
+    vUv = uv;
+    
+    
+    // We need world-space normals to match our world-space light position.
+    // Transform the tangent frame into world space.
+    // The bitangent is reconstructed from the cross product; tangent.w carries
+    // the handedness sign needed to handle mirrored UV islands correctly.
+    mat3 m = mat3(modelMatrix);
+    vWorldNormal = normalize(m * normal);
+    vWorldTangent = vec4(normalize(m * tangent.xyz), tangent.w);
+    
+    float height = getNeighbor(vUv);
+    vec3 displacement = position + normal * height * displacementScale / 64.0;
+
+    // modelMatrix converts object space → world space
+    vec4 worldPosition = modelMatrix * vec4(displacement, 1.0);
+    vWorldPos = worldPosition.xyz;
+
+    gl_Position = projectionMatrix * viewMatrix * worldPosition;
+}
+</script>
+
+
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+
+const fragmentResponse = await fetch('./fragment.glsl');
+const fragmentShaderCode = await fragmentResponse.text();
+
+// Scene
+const scene = new THREE.Scene();
+
+// Camera
+const camera = new THREE.PerspectiveCamera(
+    60,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    100
+);
+camera.position.set(2, 2, 2.5);
+
+// Renderer
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// OrbitControls
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+
+// Geometry (UV mapped plane)
+const geometry = new THREE.PlaneGeometry(2, 2, 2000, 2000);
+geometry.computeTangents();
+
+// Shader uniforms
+const uniforms = {
+    base_color: { value: new THREE.Color(0.420, 0.416, 0.353) },
+    sec_color: { value: new THREE.Color(0.439,0.373,0.188) },
+    gap_color: { value: new THREE.Color(0.353, 0.349, 0.297) },
+    scale:    { value: 6.8 },
+    black_stain_scale:    { value: 10.6 },
+    white_stain_scale:    { value: 70.0 },
+    tile_size:    { value: 0.98 },
+    randomness:    { value: 13.4 },
+    bumpStrength:    { value: 1.0 },
+    displacementScale: { value: 0.0 },
+
+    uLightPos:       { value: new THREE.Vector3(0.0, 0.5, 0.6) },
+    uLightColor:     { value: new THREE.Color('#ffffff') },
+    uLightIntensity: { value: 5.0 },
+    uAmbient:        { value: 0.05 },
+    uLightEnabled:   { value: true },
+    uSpec:           { value: 0.5 },
+};
+
+// Shader material
+const material = new THREE.ShaderMaterial({
+    uniforms: uniforms,
+    vertexShader: document.getElementById('vertexShader').textContent,
+    fragmentShader: fragmentShaderCode,
+    side: THREE.OneSided,
+    glslVersion: THREE.GLSL3,
+});
+
+// Mesh
+const plane = new THREE.Mesh(geometry, material);
+scene.add(plane);
+
+// Light indicator: small unlit sphere at the light's world position.
+// MeshBasicMaterial is never shaded, so it always appears as a bright dot.
+const lightSphereGeo = new THREE.SphereGeometry(0.05, 16, 16);
+const lightSphereMat = new THREE.MeshBasicMaterial({ color: uniforms.uLightColor.value });
+const lightSphere = new THREE.Mesh(lightSphereGeo, lightSphereMat);
+lightSphere.position.copy(uniforms.uLightPos.value);
+scene.add(lightSphere);
+
+function syncLightSphere() {
+    lightSphere.position.copy(uniforms.uLightPos.value);
+}
+
+// GUI
+const gui = new GUI();
+
+const albedoFolder = gui.addFolder('Albedo');
+albedoFolder.addColor(uniforms.base_color, 'value').name('Base Color');
+albedoFolder.addColor(uniforms.sec_color, 'value').name('Secondary Color');
+albedoFolder.addColor(uniforms.gap_color, 'value').name('Gap Color');
+albedoFolder.add(uniforms.scale, 'value', 1.0, 50.0, 0.001)
+   .name('Scale');
+albedoFolder.add(uniforms.black_stain_scale, 'value', 1.0, 50.0, 0.001)
+   .name('Scale black stains');
+albedoFolder.add(uniforms.white_stain_scale, 'value', 1.0, 200.0, 0.1)
+   .name('Scale white dots');
+albedoFolder.add(uniforms.tile_size, 'value', 0.0, 1.0, 0.01)
+   .name('Tile size');
+albedoFolder.add(uniforms.randomness, 'value', 1.0, 100.0, 0.1)
+   .name('Randomness');
+albedoFolder.add(uniforms.bumpStrength, 'value', 0.0, 5.0, 0.1)
+   .name('Bump Strength');
+albedoFolder.add(uniforms.displacementScale, 'value', 0.0, 1.0, 0.01)
+   .name('Displacement Scale');
+albedoFolder.open();
+
+// lil-gui can't bind directly to a THREE.Vector3, so we use a proxy object
+// with separate x/y/z fields and write back into the uniform on change.
+const lightParams = {
+    x: uniforms.uLightPos.value.x,
+    y: uniforms.uLightPos.value.y,
+    z: uniforms.uLightPos.value.z,
+};
+const lightFolder = gui.addFolder('Light');
+lightFolder.add(uniforms.uLightEnabled, 'value').name('Enabled')
+    .onChange(v => { lightSphere.visible = v; });
+lightFolder.add(lightParams, 'x', -3, 3, 0.01).name('Position X')
+    .onChange(v => { uniforms.uLightPos.value.x = v; syncLightSphere(); });
+lightFolder.add(lightParams, 'y', -3, 3, 0.01).name('Position Y')
+    .onChange(v => { uniforms.uLightPos.value.y = v; syncLightSphere(); });
+lightFolder.add(lightParams, 'z', -3, 3, 0.01).name('Position Z')
+    .onChange(v => { uniforms.uLightPos.value.z = v; syncLightSphere(); });
+lightFolder.addColor(uniforms.uLightColor, 'value').name('Color')
+    .onChange(() => { lightSphereMat.color.copy(uniforms.uLightColor.value); });
+lightFolder.add(uniforms.uLightIntensity, 'value', 0.1, 20, 0.1).name('Intensity');
+lightFolder.add(uniforms.uAmbient, 'value', 0, 1, 0.01).name('Ambient');
+lightFolder.add(uniforms.uSpec, 'value', 0.0, 2.0, 0.1).name('Specular');
+lightFolder.open();
+
+// Resize handling
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// Animation loop
+function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene, camera);
+}
+animate();
+
+</script>
+
+</body>
+</html>
