@@ -1,0 +1,46 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+#pragma kernel FillWhite
+#pragma kernel DrawSpot
+
+RWTexture2D<float4> snowImage;
+float colorValueToAdd;
+float resolution;
+float positionX;
+float positionY;
+float spotSize;
+
+[numthreads(8, 8, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+	snowImage[id.xy] += float4(colorValueToAdd, colorValueToAdd, colorValueToAdd, colorValueToAdd);
+}
+
+[numthreads(8, 8, 1)]
+void FillWhite(uint3 id : SV_DispatchThreadID)
+{
+	snowImage[id.xy] = float4(1.0, 1.0, 1.0, 1.0);
+}
+
+[numthreads(8, 8, 1)]
+void DrawSpot(uint3 id : SV_DispatchThreadID)
+{
+	float x = id.x / resolution;
+	float y = id.y / resolution;
+	float value;
+	
+    float xDst = x - positionX / resolution;
+    float yDst = y - positionY / resolution;
+
+	value = sqrt(xDst * xDst + yDst * yDst) * 100;
+	
+	if (value < spotSize)
+	{
+		if (value / spotSize > snowImage[id.xy].x) 
+			return;
+
+		float4 finalColor = float4(value, value, value, value) / spotSize;
+		
+		snowImage[id.xy] = finalColor;
+	}
+}
