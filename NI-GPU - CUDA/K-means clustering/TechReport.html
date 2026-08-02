@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="data:,">
+    <title>K-Means Optimization</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px;
+            background-color: #f4f7f9;
+        }
+        .report-container {
+            background-color: white;
+            padding: 50px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        h1 {
+            color: #1a4a75;
+            border-bottom: 2px solid #1a4a75;
+            padding-bottom: 10px;
+            text-align: center;
+        }
+        h2 {
+            color: #2c3e50;
+            margin-top: 30px;
+            border-left: 5px solid #3498db;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #34495e;
+        }
+        .meta-info {
+            text-align: center;
+            margin-bottom: 40px;
+            color: #666;
+            font-style: italic;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            font-size: 0.95em;
+        }
+        th {
+            background-color: #1a4a75;
+            color: white;
+            text-align: left;
+            padding: 12px;
+        }
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        .speedup { color: #10a345; font-weight: bold; }
+        .seq { color: #666; }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .code-block {
+            background-color: #272822;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Consolas', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+        }
+        .highlight {
+            font-weight: bold;
+            color: #10a345;
+        }
+        @media print {
+            body { background-color: white; padding: 0; }
+            .report-container { box-shadow: none; width: 100%; padding: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="report-container">
+    <h1>K-Means Optimization with CUDA</h1>
+    <div class="meta-info">
+        <p>Author: Josef Jech</p>
+    </div>
+
+    This report focuses on comparison of the sequential and the parallelized CUDA implementations of the K-Means algorithm for clustering data into k clusters in an n-dimensional space.
+    The numbers are stored in binary files and loaded into a vector (points) of 1D points, where the algorithm is the one who looks at the data like n-dimensional points.
+    After that, the next vector (point_cluster_ids) is used to store the assigned cluster number for the point i.
+
+    <h2>1. Implementation of sequential k-means algorithm</h2>
+    <p>
+        First k points are selected as the initial cluster centroids.
+        Then, the algorithm iteratively assigns each point to the nearest cluster.
+        As the points have their clusters, new centroids are calculated. 
+        The process is repeated until convergence, which is determined by checking if any point's cluster assignment has changed in the current iteration.
+        The time is measured using the <code>std::chrono</code> library.
+    </p>
+    
+    <h2>2. CUDA Implementation and Performance</h2>
+        Implementation starts the same as the sequetial version, but it begins to differ with moving data to GPU data stuctures in the initialization phase.
+        Points coordinates and initial centroids are copied to the GPU memory, and cluster ids are initialized like before.
+        Newly old cetroids and new centroid sums are stored in GPU memory as well, and they are used to calculate new centroids in each iteration.
+        Changed points and cluster counts are also arrays stored in GPU.
+        In every iteration, three kernels are launched. The first one assigns clusters to points by calling function which calculates distance on GPU and uses atomicAdd to update number of changed points.
+        And the second and the third one calculate new centroids by averaging the points in each cluster with help of atomicAdd.
+        
+        The time is measured using CUDA events.
+        Number of blocks is always set to relative to the array used by the kernel (points or centroids) - (N + threadsPerBlock - 1) / threadsPerBlock.
+        <h3>Measurement Results:</h3>
+        <ul>
+            <li>sequential version was executed on CPU - 12th Gen Intel Core i7-1280P (2.00 GHz)</li>
+            <li>CUDA version was executed on GPU - NVIDIA A100 PCIe 40GB</li>
+            <li>This table tests the performance of both implementations under different scenarios and limited to 50 iterations.
+                The parameters varied include:
+                <ul>
+                    <li><strong>Number of points:</strong> 1 million and 10 million</li>
+                    <li><strong>Number of clusters (K):</strong> 10, 33, and 100</li>
+                    <li><strong>Number of dimensions (N):</strong> 1, 2, 8, and 64(just for 1M points)</li>
+                    <li><strong>Threads per block:</strong> 32, 256, and 1024 for CUDA tests</li>
+                </ul>
+            </li>
+        </ul>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Algorithm</th>
+                <th>Points</th>
+                <th>K(clusters)</th>
+                <th>N(dim)</th>
+                <th>Threads</th>
+                <th>Time (ms)</th>
+                <th>Speedup</th>
+                <th>Iterations/limit</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Sequential</td><td>1M</td><td>10</td><td>1</td><td>N/A</td><td class="seq">4227.8 ms</td><td class="seq">1.0x</td><td>50/50</td>
+            </tr>
+            <tr>
+                <td>CUDA</td><td>1M</td><td>10</td><td>1</td><td>32-1024</td><td>48.7 ms</td><td class="speedup">86.8x</td><td>50/50</td>
+            </tr>
+
+            <tr>
+                <td>Sequential</td><td>1M</td><td>33</td><td>1</td><td>N/A</td><td class="seq">9168.4 ms</td><td class="seq">1.0x</td><td>50/50</td>
+            </tr>
+            <tr>
+                <td>CUDA</td><td>1M</td><td>33</td><td>1</td><td>32</td><td>40.9 ms</td><td class="speedup">224.2x</td><td>50/50</td>
+            </tr>
+            <tr>
+                <td>CUDA</td><td>1M</td><td>33</td><td>1</td><td>256</td><td>34.9 ms</td><td class="speedup">262.7x</td><td>50/50</td>
+            </tr>
+            <tr>
+                <td>CUDA</td><td>1M</td><td>33</td><td>1</td><td>1024</td><td>24.8 ms</td><td class="speedup">369.7x</td><td>50/50</td>
+            </tr>
+
+            <tr>
+                <td>Sequential</td><td>1M</td><td>100</td><td>1</td><td>N/A</td><td class="seq">23768.6 ms</td><td class="seq">1.0x</td><td>50/50</td>
+            </tr>
+            <tr>
+                <td>CUDA</td><td>1M</td><td>100</td><td>1</td><td>32-1024</td><td>30.3 ms</td><td class="speedup">784.4x</td><td>50/50</td>
+            </tr>
+
+            <tr>
+                <td>Sequential</td><td>1M</td><td>10</td><td>2</td><td>N/A</td><td class="seq">6503.3 ms</td><td class="seq">1.0x</td><td>50/50</td>
+            </tr>
+            <tr>
+                <td>CUDA</td><td>1M</td><td>10</td><td>2</td><td>32-1024</td><td>48.3 ms</td><td class="speedup">134.6x</td><td>50/50</td>
+            </tr>
+
+            <tr>
+                <td>Sequential</td><td>1M</td><td>33</td><td>2</td><td>N/A</td><td class="seq">14187.0 ms</td><td class="seq">1.0x</td><td>50/50</td>
+            </tr>
+            <tr>
+                <td>CUDA</td><td>1M</td><td>33</td><td>2</td><td>32-1024</td><td>53.7 ms</td><td class="speedup">264.2x</td><td>50/50</td>
+            </tr>
+
+            <tr>
+                <td>Sequential</td><td>1M</td><td>100</td><td>2</td><td>N/A</td><td class="seq">33166.7 ms</td><td class="seq">1.0x</td><td>50/50</td>
+            </tr>
+            <tr>
+                <td>CUDA</td><td>1M</td><td>100</td><td>2</td><td>32-1024</td><td>39.2 ms</td><td class="speedup">846.1x</td><td>50/50</td>
+            </tr>
+
+            <tr>
+                <td>Sequential</td><td>1M</td><td>10</td><td>8</td><td>N/A</td><td class="seq">14259.4 ms</td><td class="seq">1.0x</td><td>50/50</td>
+            </tr>
+            <tr>
+                <td>CUDA</td><td>1M</td><td>10</td><td>8</td><td>32-1024</td><td>300.2 ms</td><td class="speedup">47.5x</td><td>50/50</td>
+            </tr>
+
+            <tr>
+                <td>Sequential</td><td>1M</td><td>33</td><td>8</td><td>N/A</td><td class="seq">37044.2 ms</td><td class="seq">1.0x</td><td>50/50</td>
+            </tr>
+            <tr>
+                <td>CUDA</td><td>1M</td><td>33</td><td>8</td><td>32-1024</td><td>212.5 ms</td><td class="speedup">174.3x</td><td>50/50</td>
+            </tr>
+
+            <tr>
+                <td>Sequential</td><td>1M</td><td>100</td><td>8</td><td>N/A</td><td class="seq">101412.0 ms</td><td class="seq">1.0x</td><td>50/50</td>
+            </tr>
+            <tr>
+                <td>CUDA</td><td>1M</td><td>100</td><td>8</td><td>32, 256</td><td>141.5 ms</td><td class="speedup">716.7x</td><td>50/50</td>
+            </tr>
+            <tr>
+                <td>CUDA</td><td>1M</td><td>100</td><td>8</td><td>1024</td><td>148.6 ms</td><td class="speedup">682.4x</td><td>50/50</td>
+            </tr>
+
+            <tr>
+                <td>Sequential</td><td>1M</td><td>10</td><td>64</td><td>N/A</td><td class="seq">115930.0 ms</td><td class="seq">1.0x</td><td>50/50</td>
+            </tr>
+            <tr>
+                <td>CUDA</td><td>1M</td><td>10</td><td>64</td><td>32</td><td>1499.4 ms</td><td class="speedup">77.3x</td><td>50/50</td>
+            </tr>
+            <tr>
+                <td>CUDA</td><td>1M</td><td>10</td><td>64</td><td>256</td><td>868.3 ms</td><td class="speedup">133.5x</td><td>50/50</td>
+            </tr>
+            <tr>
+                <td>CUDA</td><td>1M</td><td>10</td><td>64</td><td>1024</td><td>1526.3 ms</td><td class="speedup">75.9x</td><td>50/50</td>
+            </tr>
+
+            <tr>
+                <td>Sequential</td><td>1M</td><td>33</td><td>64</td><td>N/A</td><td class="seq">263143.0 ms</td><td class="seq">1.0x</td><td>50/50</td>
+            </tr>
+            <tr>
+                <td>CUDA</td><td>1M</td><td>33</td><td>64</td><td>32, 256</td><td>1150.7 ms</td><td class="speedup">228.7x</td><td>50/50</td>
+            </tr>
+            <tr>
+                <td>CUDA</td><td>1M</td><td>33</td><td>64</td><td>1024</td><td>1226.1 ms</td><td class="speedup">214.6x</td><td>50/50</td>
+            </tr>
+
+            <tr>
+                <td>Sequential</td><td>1M</td><td>100</td><td>64</td><td>N/A</td><td class="seq">768043.0 ms</td><td class="seq">1.0x</td><td>50/50</td>
+            </tr>
+            <tr>
+                <td>CUDA</td><td>1M</td><td>100</td><td>64</td><td>32</td><td>2446.5 ms</td><td class="speedup">313.9x</td><td>50/50</td>
+            </tr>
+            <tr>
+                <td>CUDA</td><td>1M</td><td>100</td><td>64</td><td>256</td><td>2475.1 ms</td><td class="speedup">310.3x</td><td>50/50</td>
+            </tr>
+            <tr>
+                <td>CUDA</td><td>1M</td><td>100</td><td>64</td><td>1024</td><td>2679.2 ms</td><td class="speedup">286.7x</td><td>50/50</td>
+            </tr>
+
+            <tr>
+                <td>Sequential</td><td>10M</td><td>10</td><td>1</td><td>N/A</td><td class="seq">49288.0 ms</td><td class="seq">1.0x</td><td>50/50</td>
+            </tr>
+            <tr>
+                <td>CUDA</td><td>10M</td><td>10</td><td>1</td><td>32-1024</td><td>245.9 ms</td><td class="speedup">200.4x</td><td>50/50</td>
+            </tr>
+
+            <tr>
+                <td>Sequential</td><td>10M</td><td>33</td><td>1</td><td>N/A</td><td class="seq">103663.0 ms</td><td class="seq">1.0x</td><td>50/50</td>
+            </tr>
+            <tr>
+                <td>CUDA</td><td>10M</td><td>33</td><td>1</td><td>32-1024</td><td>210.2 ms</td><td class="speedup">493.2x</td><td>50/50</td>
+            </tr>
+
+            <tr>
+                <td>Sequential</td><td>10M</td><td>100</td><td>1</td><td>N/A</td><td class="seq">242370.0 ms</td><td class="seq">1.0x</td><td>50/50</td>
+            </tr>
+            <tr>
+                <td>CUDA</td><td>10M</td><td>100</td><td>1</td><td>32-1024</td><td>268.2 ms</td><td class="speedup">903.7x</td><td>50/50</td>
+            </tr>
+
+            <tr>
+                <td>Sequential</td><td>10M</td><td>10</td><td>2</td><td>N/A</td><td class="seq">61157.5 ms</td><td class="seq">1.0x</td><td>50/50</td>
+            </tr>
+            <tr>
+                <td>CUDA</td><td>10M</td><td>10</td><td>2</td><td>32-1024</td><td>458.0 ms</td><td class="speedup">133.5x</td><td>50/50</td>
+            </tr>
+
+            <tr>
+                <td>Sequential</td><td>10M</td><td>33</td><td>2</td><td>N/A</td><td class="seq">131900.0 ms</td><td class="seq">1.0x</td><td>50/50</td>
+            </tr>
+            <tr>
+                <td>CUDA</td><td>10M</td><td>33</td><td>2</td><td>32-1024</td><td>508.0 ms</td><td class="speedup">259.6x</td><td>50/50</td>
+            </tr>
+
+            <tr>
+                <td>Sequential</td><td>10M</td><td>100</td><td>2</td><td>N/A</td><td class="seq">310579.0 ms</td><td class="seq">1.0x</td><td>50/50</td>
+            </tr>
+            <tr>
+                <td>CUDA</td><td>10M</td><td>100</td><td>2</td><td>32-1024</td><td>355.8 ms</td><td class="speedup">872.9x</td><td>50/50</td>
+            </tr>
+
+            <tr>
+                <td>Sequential</td><td>10M</td><td>10</td><td>8</td><td>N/A</td><td class="seq">139456.0 ms</td><td class="seq">1.0x</td><td>50/50</td>
+            </tr>
+            <tr>
+                <td>CUDA</td><td>10M</td><td>10</td><td>8</td><td>32-1024</td><td>2962.0 ms</td><td class="speedup">47.1x</td><td>50/50</td>
+            </tr>
+
+            <tr>
+                <td>Sequential</td><td>10M</td><td>33</td><td>8</td><td>N/A</td><td class="seq">365889.0 ms</td><td class="seq">1.0x</td><td>50/50</td>
+            </tr>
+            <tr>
+                <td>CUDA</td><td>10M</td><td>33</td><td>8</td><td>32-1024</td><td>2073.0 ms</td><td class="speedup">176.5x</td><td>50/50</td>
+            </tr>
+
+            <tr>
+                <td>Sequential</td><td>10M</td><td>100</td><td>8</td><td>N/A</td><td class="seq">989310.0 ms</td><td class="seq">1.0x</td><td>50/50</td>
+            </tr>
+            <tr>
+                <td>CUDA</td><td>10M</td><td>100</td><td>8</td><td>32-1024</td><td>1369.8 ms</td><td class="speedup">722.2x</td><td>50/50</td>
+            </tr>
+        </tbody>
+        <thead>
+            <thead>
+            <tr>
+                <th>Algorithm</th>
+                <th>Points</th>
+                <th>K(clusters)</th>
+                <th>N(dim)</th>
+                <th>Threads</th>
+                <th>Time (ms)</th>
+                <th>Speedup</th>
+                <th>Iterations/limit</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>CUDA with float</td><td>10M</td><td>100</td><td>2</td><td>32-1024</td><td>355.8 ms</td><td class="speedup">872.9x</td><td>50/50</td>
+            </tr>
+             <tr>
+                <td>CUDA with double</td><td>10M</td><td>100</td><td>2</td><td>256</td><td>730.6 ms</td><td class="speedup">424x</td><td>50/50</td>
+            </tr>
+        </tbody>
+        </table>
+    </table>
+
+        <p>
+    How each parameter affected the final performance:
+    <ul>
+        <li><strong>Dataset size (Points):</strong> The bigger the data, the better the speedup.
+              Tests show
+              that simply jumping from a 1-million to a 10-million point dataset multiplies the
+               already massive speedup by an additional 1x to 2.3x.</li>
+        
+        <li><strong>Number of clusters (K):</strong> The more
+             clusters you look for, the bigger the speedup. A higher number of target centroids
+              fits better to the GPU, because its thousands of threads can calculate 
+              distances to multiple centroids in parallel.</li>
+        
+        <li><strong>Number of dimensions (N):</strong> Measurements show that
+             the <em>fewer</em> dimensions there are, the <em>higher</em> the relative speedup 
+             multiplier gets. The biggest speedups actually happen in lower-dimensional
+               spaces (like 1D or 2D).</li>
+        
+        <li><strong>Thread and Block configuration:</strong>
+             For big datasets (like 10M points), the number of threads 
+            per block barely makes a difference. However,
+            for smaller datasets (like 1M points), pushing the thread count to the extremes actually
+             hurts performance (for example, run times worsened significantly when using 32 or 1024
+              threads). In tests, <strong>256 threads per block</strong> did the best. 
+              </li>
+        <li>We see that the native data type (<code>float</code>) for GPU performs better than with (<code>double</code>), and that at least 2x.</li>
+    </ul>
+</p>
+    
+    
+    <h2>3. Conclusion</h2>
+    <p>
+        Looking at the results, it's clear that using CUDA for the K-Means algorithm gives us a real performance boost (up to 900x in measured cases). 
+        The GPU really shines when the workload gets heavy what we see on measurements of millions of points. 
+    Measurements revealed that the most extreme relative speedups occur with
+     a combination of a high number of target clusters (K) and lower dimensions
+     . The GPU handles this setup well because its 
+    threads can calculate distances to many centroids in parallel,
+       while going through the simpler math of low dimensions without hitting 
+       memory bandwidth bottlenecks. Additionally, the tests showed that pushing 
+       the thread count to the extremes is not always the best approach. Across the
+        various test runs, using exactly 256 threads per block consistently emerged as
+         the optimal setup to keep the GPU fully occupied.
+    </p>
+    <p>
+       Parallelizing K-Means with CUDA is pretty much mandatory if you want to work with massive, multi-dimensional datasets. 
+    </p>
+
+    <h3>Additional Measurements:</h3>
+    <table>
+            <thead>
+                <tr>
+                    <th>Algorithm</th>
+                    <th>Points</th>
+                    <th>K(clusters)</th>
+                    <th>N(dim)</th>
+                    <th>Threads</th>
+                    <th>Time (ms)</th>
+                    <th>Speedup</th>
+                    <th>Iterations/limit</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Sequential</td>
+                    <td>10 000</td>
+                    <td>1</td>
+                    <td>1</td>
+                    <td>N/A</td>
+                    <td>8 ms</td>
+                    <td>1.0x</td>
+                    <td>2/100</td>
+                </tr>
+                <tr>
+                    <td>CUDA </td>
+                    <td>10 000</td>
+                    <td>1</td>
+                    <td>1</td>
+                    <td>256</td>
+                    <td>4.7 ms</td>
+                    <td><span class="highlight">1.7x</span></td>
+                    <td>2/100</td>
+                </tr>
+                                <tr>
+                    <td>Sequential</td>
+                    <td>1M</td>
+                    <td>1</td>
+                    <td>1</td>
+                    <td>N/A</td>
+                    <td>18 ms</td>
+                    <td>1.0x</td>
+                    <td>2/100</td>
+                </tr>
+                 <tr>
+                    <td>CUDA </td>
+                    <td>1M</td>
+                    <td>1</td>
+                    <td>1</td>
+                    <td>512</td>
+                    <td>8 ms</td>
+                    <td><span class="highlight">2,25x</span></td>
+                    <td>2/100</td>
+                </tr>
+                                <tr>
+                    <td>Sequential</td>
+                    <td>100M</td>
+                    <td>1</td>
+                    <td>1</td>
+                    <td>N/A</td>
+                    <td>1639 ms</td>
+                    <td>1.0x</td>
+                    <td>2/10</td>
+                </tr>
+
+                <tr>
+                    <td>CUDA</td>
+                    <td>100M</td>
+                    <td>1</td>
+                    <td>1</td>
+                    <td>128</td>
+                    <td>264 ms</td>
+                    <td><span class="highlight">6,2x</span></td>
+                    <td>2/10</td>
+                </tr>
+                <tr>
+                    <td>CUDA</td>
+                    <td>100M</td>
+                    <td>1</td>
+                    <td>1</td>
+                    <td>256</td>
+                    <td>297 ms</td>
+                    <td><span class="highlight">5,5x</span></td>
+                    <td>2/10</td>
+                </tr>
+                <tr>
+                    <td>CUDA</td>
+                    <td>100M</td>
+                    <td>1</td>
+                    <td>1</td>
+                    <td>512</td>
+                    <td>258 ms</td>
+                    <td><span class="highlight">6,3x</span></td>
+                    <td>2/10</td>
+                </tr>
+                <tr>
+                    <td>Sequential</td>
+                    <td>10 000</td>
+                    <td>10</td>
+                    <td>1</td>
+                    <td>N/A</td>
+                    <td>94 ms</td>
+                    <td>1.0x</td>
+                    <td>100/100</td>
+                </tr>
+                <tr>
+                    <td>CUDA </td>
+                    <td>10 000</td>
+                    <td>10</td>
+                    <td>1</td>
+                    <td>256</td>
+                    <td>6.1 ms</td>
+                    <td><span class="highlight">15.4x</span></td>
+                    <td>100/100</td>
+                </tr>
+                <tr>
+                    <td>Sequential</td>
+                    <td>1M</td>
+                    <td>10</td>
+                    <td>1</td>
+                    <td>N/A</td>
+                    <td>8220 ms</td>
+                    <td>1.0x</td>
+                    <td>100/100</td>
+                </tr>
+                <tr>
+                    <td>CUDA </td>
+                    <td>1M</td>
+                    <td>10</td>
+                    <td>1</td>
+                    <td>512</td>
+                    <td>93,56 ms</td>
+                    <td><span class="highlight">87,85x</span></td>
+                    <td>100/100</td>
+                </tr>
+                                <tr>
+                    <td>Sequential</td>
+                    <td>100M</td>
+                    <td>10</td>
+                    <td>1</td>
+                    <td>N/A</td>
+                    <td>99625 ms</td>
+                    <td>1.0x</td>
+                    <td>10/10</td>
+                </tr>
+
+                <tr>
+                    <td>CUDA</td>
+                    <td>100M</td>
+                    <td>10</td>
+                    <td>1</td>
+                    <td>128/256/512</td>
+                    <td>555 ms</td>
+                    <td><span class="highlight">179,5x</span></td>
+                    <td>10/10</td>
+                </tr>
+                <tr>
+                    <td>Sequential</td>
+                    <td>2 500</td>
+                    <td>10</td>
+                    <td>4</td>
+                    <td>N/A</td>
+                    <td>12 ms</td>
+                    <td>1.0x</td>
+                    <td>28/100</td>
+                </tr>
+                <tr>
+                    <td>CUDA </td>
+                    <td>2 500</td>
+                    <td>10</td>
+                    <td>4</td>
+                    <td>256</td>
+                    <td>1.8 ms</td>
+                    <td><span class="highlight">6,6x</span></td>
+                    <td>28/100</td>
+                </tr>
+                <tr>
+                    <td>Sequential</td>
+                    <td>250k</td>
+                    <td>10</td>
+                    <td>4</td>
+                    <td>N/A</td>
+                    <td>3564 ms</td>
+                    <td>1.0x</td>
+                    <td>96/100</td>
+                </tr>
+                <tr>
+                    <td>CUDA </td>
+                    <td>250k</td>
+                    <td>10</td>
+                    <td>4</td>
+                    <td>512</td>
+                    <td>86,2 ms</td>
+                    <td><span class="highlight">41,3x</span></td>
+                    <td>96/100</td>
+                </tr>
+                 <tr>
+                    <td>Sequential</td>
+                    <td>25M</td>
+                    <td>10</td>
+                    <td>4</td>
+                    <td>N/A</td>
+                    <td>46066 ms</td>
+                    <td>1.0x</td>
+                    <td>10/10</td>
+                </tr>
+                <tr>
+                    <td>CUDA</td>
+                    <td>25M</td>
+                    <td>10</td>
+                    <td>4</td>
+                    <td>128/256/512</td>
+                    <td>671 ms</td>
+                    <td><span class="highlight">68,6x</span></td>
+                    <td>10/10</td>
+                </tr>
+                <tr>
+                    <td>Sequential</td>
+                    <td>62,5k</td>
+                    <td>10</td>
+                    <td>16</td>
+                    <td>N/A</td>
+                    <td>2605 ms</td>
+                    <td>1.0x</td>
+                    <td>100/100</td>
+                </tr>
+                <tr>
+                    <td>CUDA </td>
+                    <td>62,5k</td>
+                    <td>10</td>
+                    <td>16</td>
+                    <td>512</td>
+                    <td>82,35 ms</td>
+                    <td><span class="highlight">31,6x</span></td>
+                    <td>100/100</td>
+                </tr>
+                <tr>
+                    <td>Sequential</td>
+                    <td>6,25M</td>
+                    <td>10</td>
+                    <td>16</td>
+                    <td>N/A</td>
+                    <td>30689 ms</td>
+                    <td>1.0x</td>
+                    <td>10/10</td>
+                </tr>
+
+                <tr>
+                    <td>CUDA</td>
+                    <td>6,25M</td>
+                    <td>10</td>
+                    <td>16</td>
+                    <td>128/256/512</td>
+                    <td>431,7 ms</td>
+                    <td><span class="highlight">71,2x</span></td>
+                    <td>10/10</td>
+                </tr>
+                
+
+
+                <tr>
+                    <td>Sequential</td>
+                    <td>15,6k</td>
+                    <td>10</td>
+                    <td>64</td>
+                    <td>N/A</td>
+                    <td>2368 ms</td>
+                    <td>1.0x</td>
+                    <td>100/100</td>
+                </tr>
+                <tr>
+                    <td>CUDA </td>
+                    <td>15,6k</td>
+                    <td>10</td>
+                    <td>64</td>
+                    <td>512</td>
+                    <td>60 ms</td>
+                    <td><span class="highlight">39,5x</span></td>
+                    <td>100/100</td>
+                </tr>
+                <tr>
+                    <td>Sequential</td>
+                    <td>1,56M</td>
+                    <td>10</td>
+                    <td>64</td>
+                    <td>N/A</td>
+                    <td>26602 ms</td>
+                    <td>1.0x</td>
+                    <td>10/10</td>
+                </tr>
+
+                <tr>
+                    <td>CUDA</td>
+                    <td>1,56M</td>
+                    <td>10</td>
+                    <td>64</td>
+                    <td>128/256/512</td>
+                    <td>277 ms</td>
+                    <td><span class="highlight">96x</span></td>
+                    <td>10/10</td>
+                </tr>
+
+                <tr>
+                    <td>Sequential</td>
+                    <td>3,9k</td>
+                    <td>10</td>
+                    <td>256</td>
+                    <td>N/A</td>
+                    <td>876 ms</td>
+                    <td>1.0x</td>
+                    <td>38/100</td>
+                </tr>
+                 <tr>
+                    <td>CUDA </td>
+                    <td>3,9k</td>
+                    <td>10</td>
+                    <td>256</td>
+                    <td>512</td>
+                    <td>48,2 ms</td>
+                    <td><span class="highlight">18,17x</span></td>
+                    <td>38/100</td>
+                </tr>
+                <tr>
+                    <td>Sequential</td>
+                    <td>390k</td>
+                    <td>10</td>
+                    <td>256</td>
+                    <td>N/A</td>
+                    <td>25853 ms</td>
+                    <td>1.0x</td>
+                    <td>10/10</td>
+                </tr>
+
+                <tr>
+                    <td>CUDA</td>
+                    <td>390k</td>
+                    <td>10</td>
+                    <td>256</td>
+                    <td>128/256/512</td>
+                    <td>193 ms</td>
+                    <td><span class="highlight">134x</span></td>
+                    <td>10/10</td>
+                </tr>
+                <tr>
+                    <td>Sequential</td>
+                    <td>976</td>
+                    <td>10</td>
+                    <td>1024</td>
+                    <td>N/A</td>
+                    <td>115 ms</td>
+                    <td>1.0x</td>
+                    <td>5/100</td>
+                </tr>
+                <tr>
+                    <td>CUDA </td>
+                    <td>976</td>
+                    <td>10</td>
+                    <td>1024</td>
+                    <td>512</td>
+                    <td>23,5 ms</td>
+                    <td><span class="highlight">5x</span></td>
+                    <td>5/100</td>
+                </tr>
+
+                <tr>
+                    <td>Sequential</td>
+                    <td>97k</td>
+                    <td>10</td>
+                    <td>1024</td>
+                    <td>N/A</td>
+                    <td>25285 ms</td>
+                    <td>1.0x</td>
+                    <td>10/10</td>
+                </tr>
+
+                <tr>
+                    <td>CUDA</td>
+                    <td>97k</td>
+                    <td>10</td>
+                    <td>1024</td>
+                    <td>128</td>
+                    <td>193 ms</td>
+                    <td><span class="highlight">131x</span></td>
+                    <td>10/10</td>
+                </tr>
+                <tr>
+                    <td>CUDA</td>
+                    <td>97k</td>
+                    <td>10</td>
+                    <td>1024</td>
+                    <td>256</td>
+                    <td>185 ms</td>
+                    <td><span class="highlight">136,7x</span></td>
+                    <td>10/10</td>
+                </tr>
+                <tr>
+                    <td>CUDA</td>
+                    <td>97k</td>
+                    <td>10</td>
+                    <td>1024</td>
+                    <td>512</td>
+                    <td>181 ms</td>
+                    <td><span class="highlight">139,7x</span></td>
+                    <td>10/10</td>
+                </tr>
+
+                <tr>
+                    <td>Sequential</td>
+                    <td>50M</td>
+                    <td>20</td>
+                    <td>2</td>
+                    <td>N/A</td>
+                    <td>231055 ms</td>
+                    <td>1.0x</td>
+                    <td>20/20</td>
+                </tr>
+                <tr>
+                    <td>CUDA</td>
+                    <td>50M</td>
+                    <td>20</td>
+                    <td>2</td>
+                    <td>32-1024</td>
+                    <td>987,2 ms</td>
+                    <td><span class="highlight">234x</span></td>
+                    <td>20/20</td>
+                </tr>
+                
+            </tbody>
+        </table>
+    <p><em>*This HTML template was generated by AI model - Gemini Pro 3.1</em></p>
+
+</div>
+
+</body>
+</html>
