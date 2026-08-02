@@ -11,7 +11,7 @@
 This ray tracer is implemented in C++ purely for CPU. It features traditional Whitted ray tracing but enhanced by fresnel equasion done by Schlick's approximation to correctly mix reflexted and transmitted radiance.
 Albedo textures are sampled by bilinear interpolation and their mipmaps trilinear by interpolation. It is also possible to plug in normal map. For BRDF you can choose from Phong and GGX illumination, where by GGX is apllied gamma correction and post-processing. The whole renderer is based on the Kd-Tree for faster triangle ray intersection query.
 
-![](renders/PNG/main.png)
+![](renders/rendersFinal/main.png)
 
 
 
@@ -83,7 +83,7 @@ To change setting of render you can set in config.json:
     - others - 6  
 
 **Renders - Phong left, GGX right**
-![](renders/PNG/6.png)
+![](renders/rendersFinal/6.png)
 
-![](renders/PNG/66.png)
+![](renders/rendersFinal/66.png)
 
