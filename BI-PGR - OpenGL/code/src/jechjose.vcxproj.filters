@@ -1,0 +1,105 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="jechjose.cpp" />
+    <ClCompile Include="camera.cpp">
+      <Filter>CPP</Filter>
+    </ClCompile>
+    <ClCompile Include="cb.cpp">
+      <Filter>CPP</Filter>
+    </ClCompile>
+    <ClCompile Include="curve.cpp">
+      <Filter>CPP</Filter>
+    </ClCompile>
+    <ClCompile Include="fire.cpp">
+      <Filter>CPP</Filter>
+    </ClCompile>
+    <ClCompile Include="lights.cpp">
+      <Filter>CPP</Filter>
+    </ClCompile>
+    <ClCompile Include="object_render.cpp">
+      <Filter>CPP</Filter>
+    </ClCompile>
+    <ClCompile Include="rat.cpp">
+      <Filter>CPP</Filter>
+    </ClCompile>
+    <ClCompile Include="singlemesh.cpp">
+      <Filter>CPP</Filter>
+    </ClCompile>
+    <ClCompile Include="smoke.cpp">
+      <Filter>CPP</Filter>
+    </ClCompile>
+    <ClCompile Include="constants.h">
+      <Filter>HEADER</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="camera.h">
+      <Filter>HEADER</Filter>
+    </ClInclude>
+    <ClInclude Include="cb.h">
+      <Filter>HEADER</Filter>
+    </ClInclude>
+    <ClInclude Include="curve.h">
+      <Filter>HEADER</Filter>
+    </ClInclude>
+    <ClInclude Include="fire.h">
+      <Filter>HEADER</Filter>
+    </ClInclude>
+    <ClInclude Include="lights.h">
+      <Filter>HEADER</Filter>
+    </ClInclude>
+    <ClInclude Include="objects_render.h">
+      <Filter>HEADER</Filter>
+    </ClInclude>
+    <ClInclude Include="rat.h">
+      <Filter>HEADER</Filter>
+    </ClInclude>
+    <ClInclude Include="smoke.h">
+      <Filter>HEADER</Filter>
+    </ClInclude>
+    <ClInclude Include="singlemesh.h">
+      <Filter>HEADER</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="fire.frag">
+      <Filter>SHADER</Filter>
+    </None>
+    <None Include="fire.vert">
+      <Filter>SHADER</Filter>
+    </None>
+    <None Include="shader.frag">
+      <Filter>SHADER</Filter>
+    </None>
+    <None Include="shader.vert">
+      <Filter>SHADER</Filter>
+    </None>
+    <None Include="skybox.frag">
+      <Filter>SHADER</Filter>
+    </None>
+    <None Include="skybox.vert">
+      <Filter>SHADER</Filter>
+    </None>
+    <None Include="smoke.frag">
+      <Filter>SHADER</Filter>
+    </None>
+    <None Include="smoke.vert">
+      <Filter>SHADER</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="config.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CPP">
+      <UniqueIdentifier>{bbd85135-6ebc-44ef-a7dd-a95dede97364}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="HEADER">
+      <UniqueIdentifier>{a45ac2c2-4e8e-4699-a297-edd8e2a90b16}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SHADER">
+      <UniqueIdentifier>{cca44c19-f1cf-44c1-a539-807ccc3715ce}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
