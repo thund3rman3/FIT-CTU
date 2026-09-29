@@ -1,0 +1,4 @@
+# Exercise 6: U-Net (tasks finalization)
+
+
+Finalize the tasks from xref:exercise-4.adoc[Exercise 4] and xref:exercise-5.adoc[Exercise 5] and prepare for xref:../Assignments/assignment-2.adoc[Assignment 2] submission.

@@ -1,0 +1,80 @@
+# Assignment 3
+
+IMPORTANT: **Deadline** for submission: **TBD**
+
+This assignment covers exercises 7, 8, 9:
+
+- xref:../tutorials/exercise-7.adoc[Exercise 7: CNN Classification (Custom vs. Pretrained)]
+- xref:../tutorials/exercise-8.adoc[Exercise 8: CNN Interpretability]
+- xref:../tutorials/exercise-9.adoc[Exercise 9: Siamese Networks for Image Similarity]
+
+### Objective
+Implementation and evaluation of classification models (CNNs), analysis of their decision-making process (XAI), and learning image similarity using Siamese networks on the cilia/inpainting dataset.
+
+---
+
+### Part 1: Classification (Original vs. Inpainted)
+
+
+- **Dataset:** Prepare the dataset from xref:exercise-7.adoc[Exercise 7] containing two classes: *original* cilia and *inpainted* modifications.
+- **Models:** Implement and train two variations:
+  1. A **custom** CNN architecture designed by you.
+  2. A **pretrained** model (Transfer Learning) using a backbone like ResNet (frozen or fine-tuned).
+- **Evaluation:** Compare the performance (accuracy, loss curves) of the custom model versus the pretrained approach.
+
+*Deliverables:* Source code for both models, training logs, and a comparative summary in the report.
+
+---
+
+### Part 2: Model Interpretability
+
+
+- Use the trained classification model from Part 1.
+- Apply attribution methods (e.g., **Saliency**, **Integrated Gradients**, or **Grad-CAM**) to analyze the decision process.
+- Visualise the results to demonstrate what features the network focuses on when distinguishing between original and inpainted images.
+
+*Deliverables:* Visualizations of attribution maps for selected samples and a brief discussion on the model's focus areas. 
+
+---
+
+### Part 3: Siamese Networks
+
+
+- **Task:** Build a Siamese network to determine image similarity (detect if two samples belong to the same class).
+- **Implementation:**
+
+  - Create positive (same class) and negative (different class) image pairs.
+  - Implement a contrastive loss function.
+
+- Evaluate the performance of the trained model
+
+*Deliverables:* Siamese network implementation, training curves (loss), and evluation (+optionally: embedding space visualization)
+
+---
+
+## Submission
+
+TIP: For details on **assignment submission** (how to guide) refer to the link:https://help.fit.cvut.cz/gitlab/git-class-repos/examples/homework.html?utm_source=chatgpt.com#_postup-odevzd%C3%A1n%C3%AD-%C3%BAkolu-pro-studenta[official tutorial].
+
+Submit both *report + code* (create a new branch for assignment 3):
+
+- *1. Code:* Complete implementation for classification (custom & transfer), XAI scripts, and Siamese network training.
+- *2. Report:* Summary of dataset preparation, architecture descriptions, comparative results (Custom vs. Pretrained), interpretation of XAI maps, and analysis of the Siamese network.
+
+|===
+| Component | Max Points
+
+| Technical solution
+| 6
+
+| Implementation - structure & formal level
+| 2
+
+| Report - structure & formal level
+| 2
+
+| *Total (Assignment 3)*
+| *10*
+|===
+
+WARNING: Submission of *both* the *report and* the *source code* is a prerequisite for any evaluation (if not submitted, 0 points).

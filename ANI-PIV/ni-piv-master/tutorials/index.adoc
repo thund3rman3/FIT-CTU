@@ -1,0 +1,71 @@
+= Exercises
+
+Download *data* (`*.tif`) for this assignment from link:https://gitlab.fit.cvut.cz/NI-PIV/ni-piv/-/tree/master/tutorials/files/Data[this directory].
+
+
+[%header, cols="10h,20,70"]
+|====
+| #
+| Date
+| Topic
+
+| 1.
+| 25. 9. 2025
+| xref:exercise-1.adoc[Image Processing and Enhancement]
+| 2.
+| 2. 10. 2025
+| xref:exercise-2.adoc[Morphological Image Reconstruction]
+| 3. 
+| 9. 10. 2025
+| xref:exercise-3.adoc[Image Filtration]
+| Deadline
+| 16. 10. 2025 (14:30)
+| xref:../Assignments/assignment-1.adoc[1. Assignment PIV] (exercises 1-3)
+| 4. 
+| 16. 10. 2025
+| xref:exercise-4.adoc[U-Net Segmentation]
+| 5. 
+| 23. 10. 2025
+| xref:exercise-5.adoc[U-Net Evaluation and Hyperparameter Tuning]
+| 6. 
+| 30. 10. 2025
+| xref:exercise-6.adoc[U-Net (Finalization)]
+| Deadline
+| 6. 11. 2025 (14:30)
+| xref:../Assignments/assignment-2.adoc[2. Assignment PIV] (exercises 4-6)
+| 7. 
+| 6. 11. 2025
+| xref:exercise-7.adoc[CNN Classification (cilia inpaint)]
+| 8. 
+| 13. 11. 2025
+| xref:exercise-8.adoc[CNN Interpretability (cilia inpaint)]
+| 9. 
+| 20. 11. 2025
+| xref:exercise-9.adoc[Siamese Network (cilia inpaint)]
+| Deadline
+| 27. 11. 2025 (14:30)
+| xref:../Assignments/assignment-3.adoc[3. Assignment PIV] (exercises 7-9)
+| 10. 
+| 27. 11. 2025
+| xref:exercise-10.adoc[Superpixel Segmentation]
+| 11. 
+| 4. 12. 2025
+| xref:exercise-11.adoc[Motion and Tracking]
+| 12. 
+| 11. 12. 2025
+| xref:exercise-12.adoc[Motion and Tracking (Finalization)]
+| Deadline
+| 17. 12. 2025 (10:30)
+| xref:../Assignments/assignment-4.adoc[4. Assignment PIV] (exercises 10-12)
+|====
+
+
+TIP: For details on **assignment submission** (how to) refer to the link:https://help.fit.cvut.cz/gitlab/git-class-repos/examples/homework.html?utm_source=chatgpt.com#_postup-odevzd%C3%A1n%C3%AD-%C3%BAkolu-pro-studenta[official tutorial].
+
+
+////
+| 2.
+| 25. 2. 2020
+| link:files/2-dolor-sit-amet.pdf[Téma druhé přednášky] (PDF)
+////
+
