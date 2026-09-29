@@ -1,0 +1,389 @@
+# Hardware
+
+- !Kamera Basler má označení acA720-290gm. Co je z názvu zřejmé
+	- ANO
+		- Maximální frekvence rozlišení je 290 fps
+		- rozhraní pro připojení kamery je GigE
+	- NE
+		- jedná se o řádkovou kameru
+		- maximální frekvence rozlišení je 29 fps
+- inteligentními kamerami se rozumí
+	- ANO
+		- 360 kamery
+		- Barcode čtečky
+		- QR čtečky
+		- čtečky poznávacích značek
+		- face recognition kamery
+		- obecně kamery s algoritmy pro zpracování obrazu
+		- jsou jednoúčelové
+		- zpracování probíhá na čipu kamery
+- řádkovou kameru využiji pokud řeším úlohu
+	- ANO
+		- vše pohybové / rotační
+		- něco s krátkým expozičním časem / vysokou frekvencí
+	- NE
+		- Výpočet NDVI při snímkování z dronu (nějaké procento zeleně)
+		- Biometrický scan oka
+		- unik kapaliny
+- !Při výběru objektivu na průmyslovou úlohu měření dílů záleží na: (kamera je už vybraná)
+	- ANO
+		- umístění kamery
+	- NE
+		- přesnosti měření
+		- rozlišení kamery
+		- vysokorychlostním rozhraní kamery
+- !Na snímkovací frekvenci má vliv
+	- ANO
+		- expoziční čas
+		- rozlišení kamery
+	- NE
+		- clonové číslo
+		- vyvážení bílé
+- !Pomocí čeho se filtruje světlo dopadající na obrazový snímač jednočipové RGB kamery
+	- ANO
+		- Bayerovy masky
+	- NE
+		- Bauerovy masky
+		- Nefiltruje se
+		- Butterworthovy masky (je butterworthův filtr pro frekvenční filtraci)
+- !Hlavními kritérii pro výběr správného osvětlení jsou
+	- ANO
+		- Maximalizace kontrastu oblastí zájmu
+		- Minimalizace kontrastu pozadí
+		- Robustnost, opakovatelnost výsledků měření (stálé podmínky)
+	- NE
+		- Minimalizace jasu pozadí (občas naopak máme podložku co svítí)
+		- Maximalizace jasu oblasti zájmu (to samé jako nahoře)
+- !Při výběru kamery na průmyslovou úlohu měření dílů záleží vždy na
+	- ANO
+		- Velikosti měřeného objektu (výpočet 10% z čeho? Z velikosti objektu)
+		- Rozlišení kamery (min. rozlišení potřeba)
+		- Přesnosti měření (např. procento max. přesahu)
+	- NE
+		- Ohniskové vzdálenosti objektivu
+		- Velikosti měřeného objektu
+- !Pro ostřící mechanismus průmyslových objektivů platí
+	- ANO
+		- Objektivy odolné proti otřesům a vibracím mají robustnější zamykací systém
+		- Má delší chod pro přesnější zaostření
+		- Nastavovací prvky jsou obvykle jištěny šroubky proti posunutí
+		- Objektivy pro průmyslové kamery mají upravenou stupnici pro přesnější zaostření na krátkou vzdálenost
+	- NE
+		- S pomocí šroubků dokažu aretovat optický střed
+		- Má kratší chod kvůli kompaktním rozměrům průmyslových objektivů
+- Mezi senzory pracující v elektromagnetickém spektru patří
+	- ANO
+		- UV kamera
+		- Rentgen
+		- Lidar
+	- NE
+		- Ultrazvuk
+# Optika
+- vada na obrázku (distorze)
+	- ![[Pasted image 20250108165751.png]]
+	- ANO
+		- distorze
+		- Vada se dá odsranit kalibrací kamery
+	- NE
+		- rybí oko
+		- vada lze odstranit pomocí Hough lines
+		- vada nelze odstranit
+		- Pro odstranění musím znát úběžníky
+- paralelou sítnice v lidském oku je tato část soustavy
+	- snímač
+- !zornice představuje
+	- CLONA!!! (dá se to zapamatovat tak, že se zúžuje / rozšiřuje - btw čočka je prostě čočka)
+- !Ideálního kontrastu obrazu při snímání plošného zeleného objektu lze dosáhnout použitím
+	- ANO
+		- zadního podsvícení bílé barvy
+	- NE
+		- červeného osvětlení v temném poli (vše pohlceno)
+		- bílého přímého prstencového osvětlení (něco se odrazí i od pozadí)
+		- barevného filtru v pásmu spektra červené barvy (vše pohlceno)
+- Mam kameru a objektiv s ohniskovou vzdálenosti f=30. Uz nemuzu hýbat s kamerou, objekt se mi nevejde do záběru. Jaký objektiv by mohl vyřešit problém
+	- ![[Pasted image 20241024232505.png]]
+	- potřebuju rozšířit zorný úhel, tedy zkrátit focal length
+	- ANO
+		- f = 8
+		- f = 20
+	- NE
+		- f = 35
+		- f = 50
+- aliasing
+	- ANO
+		- je výsledkem použití špatné vzorkovací frekvence
+		- je děj viditelný i pouhým okem
+	- NE
+		- slouží primárně k tvorbě fascinujících obrazců
+		- lze odstranit pomocí frekvenčního filtru horní propusti
+# Geometrie
+- !pro úběžnici a úběžníky platí
+	- ANO
+		- K detekci úběžníků lze využít Cannyho detektor následovaný algoritmem Hough lines
+		- Dvě skupiny linií pozemní roviny formují úběžnici nazývanou horizont
+	- NE
+		- pokud se úběžník nachází mimo obraz, jsou všechny jeho souřadnice nulové - x je nějaké reálné číslo
+		- Různé skupiny rovnoběžných linií vždy konvergují k jednom úběžníku
+- Amesova místnost je typ místnosti, která je
+	- ANO
+		- psychology vyžívána ke zkoumání lidského vnímání
+		- ve skutečnosti tvarovaná jako lichoběžník
+		- Využívána ve starých filmech k vytváření iluze nadměrné velikosti osob
+	- NE
+		- využívána v novodobých filmech při natáčení akčních záběrů v místnosti
+		- ve skutečnosti tvarovaná jako kužel, ale vytváří iluzi pravoúhlého prostoru
+- Pro homogenní souřadnice platí
+	- ANO
+		- s jejich pomocí lze vyjádřit některé operace maticově
+		- S jejich pomocí lze vhodně reprezentovat body v nekonečnu
+		- Homogenníími souřadnicemi bodu P s Euklidovskými souřadnicemi (x,y,z) ve 3D je uspořádaná čtveřice (x', y', z',w)
+		- Díky  možnosti vyjadřovat některé operace maticově se výpočty stávají rychlejší - např. kvůli GPU
+	- NE
+		- 
+- !nejpoužívanějšími geometrickými transformacemi jsou:
+	- ANO
+		- euklidovská (rotace + posunutí)
+		- podobnostní (rotace + posunutí + škálování)
+		- afinní (rotace + posunutí + škálování + zkosení)
+		- projektivní (rotace + posunutí + škálování + zkosení + projekce)
+	- NE
+		- Bhattacharyyova (je to vzdálenost porovnávající překryv histogramů)
+		- Fourierova
+		- detekční
+- Dva úplně stejný obrázky. Jaká byla homography matice?
+	- jednotková matice
+# Morfologické operace
+- !transformace hit-or-miss
+	- ANO
+		- umožňuje detekci volných konců skeletonu
+		- využívá speciální typ strukturního elementu
+	- NE
+		- se využívá k oddělení nebo spojení binárních objektů
+		- je vratná operace
+- ekvalizace
+	- ![[Pasted image 20250108181653.png]]
+- !top-hat transformace
+	- ANO
+		- umí zvýšit kontrast objektů
+		- umí snížit kontrast objektů
+	- NE
+		- nepotřebuje strukturní element
+		- je jiný název pro Hit-or-miss transformaci
+- !tvarové charakteristiky
+	- oblast / kontura
+		- ![[Pasted image 20250108205915.png]]
+	- to jsou takové věci jako konkávnost apod.
+	- ANO
+		- lze počítat z binárních obrázků
+		- poměr stran a dosah (aspect ratio = min_diameter / max_diameter, extent = area / bounding_rectangle_area) využívají zisk bounding box objektu
+	- NE
+		- kulatost a špičatost (roundness, formfactor) se obě počítají z kontury objektu (z oblasti)
+		- Vypouklost (convexity) a pomer stran se pocitaji z oblasti - z kontury
+- TODO !Ktere operace jsou náchylné na sum
+	- ANO
+		- Top hat transformace
+		- Skeletonizace
+		- Dilatace
+		- Uzavření
+	- NE
+		- f
+- dilatace
+	- ANO
+		- Využívá se v operací uzavření
+		- Využívá se v operaci otevření
+		- Je náchylná na šum
+	- NE
+		- Využivá kombinaci morfologický operací
+# Předzpracování
+- !Digitalizace obrazu je
+	- ANO
+		- převod analogového signálu na digitální
+		- převod signálu na diskrétní
+	- NE
+		- způsob analýzy spojitého signálu
+		- jeden z parametrů zobrazení matice obrazu
+- Běžnými operacemi **předzpracování** obrazu
+	- ANO
+		- ekvivalizace histogramu
+	- NE
+		- odstranění difrakce
+		- kolineární transformace
+		- odstranění projektivity
+- !Dva histogramy - před a po. Byla provedena gamma korekce, s jakým koeficientem?
+	- umocnění na exponent
+	- základy jsou menší než 1 (dělené 255)
+	- 
+	- Gamma < 0 - nikdy nepoužíváme
+	- Gamma > 0 - true vždycky?
+	- Gamma < 1
+		- doprava
+	- Gamma > 1
+		- ztmavení světel
+		- posun histogramu doleva (hodnoty $0.01^2$ = 0.0001, zatímco $0.999^2$ je skoro u 1)
+- TODO Uprava jasu a kontrastu je
+	- ANO
+		- Neinvertibilni operace
+		- Gamma korece se používá casteji
+	- NE
+		- Destruktivni operace
+		- Lze použit pro ekvalizaci histogramu
+- Pro lineární jasové a kontrastové operace platí
+	- ANO
+		- Využívají se v případě chybně zvoleného času expozice
+		- Změna jasu je neinvertibilní operace
+		- Změna kontrastu je neinvertibilní operace
+	- NE
+		- Jsou nedestruktivní
+		- 
+# Filtrace
+- Jakou operací získám z nekonečného počtu složek amplitudového spektra konečný počet?
+	- ANO
+		- diskrétní furierova transformace
+		- diskrétní kosinová transformace
+	- NE
+		- box filtr v prostorové oblasti
+		- gauss filter v prostorové oblasti
+		- filtr horní zádrže
+		- filtr dolní propusti
+- Komprese obrazu
+	- ANO
+		- slouží pro ukládání dat
+		- je využívána u IP kamer
+	- NE
+		- umožňuje vyšší efektivitu strojového učení
+		- je obecný název pro huffmanovo kódování
+- !Co je amplitudové spektrum
+	- ANO
+		- Závislost amplitudy na frekvenci
+	- NE
+		- závislost fáze na frekvenci
+		- závislost amplitudy na posunutí
+		- závislost fáze na amplitudě
+- !Čím je charakterizován obrazový filtr (myslí se tím v prostorové oblasti - viz přednáška)
+	- ANO
+		- množinou pixelů 
+		- tvarem
+		- velikostí
+	- NE
+		- frekvencí
+- ???Laplaceuv filtr je diferenční protože
+	- diferenční zvýrazňuje osamělé hodnoty, vyhlazovací je potlačuje
+	- ANO
+		- Součet koeficientů je 0
+	- NE
+		- Má sudý počet řádků
+		- Detekuje hrany
+- Medianovy filtr funguje tak ze
+	- ANO
+		- Seřadí pod filtrem hodnoty a pak volí střední hodnotu
+	- NE
+		- Pocita median obrazku a z toho voli velikost filtru
+		- Seřadí pod filtrem hodnoty, ale každou bere podle její váhy, pak volí střední hodnotu
+- Mezi nelineární filtry patří
+	- ANO
+		- Mediánový filtr
+	- NE
+		- Průměrovací filtr
+		- Gaussovský filtr
+		- Laplaceûv filtr
+- Při filtrováni obrazu Gaussovým filtrem…
+	- ANO
+		- dominantní váhu by měl mít středový pixel
+	- NE
+		- je výsledný obrázek zaostřený
+		- je výsledek podobný jako při filtrování filtrem horní propusti
+		- obsahuje výsledný obrázek detaily v obraze
+# Detekce hran
+- !Jak se liší Sobelův a Prewitové filtr
+	- ANO
+		- Sobel dává větší důraz na středový pixel
+	- NE
+		- Sobelův filtr má menší obtížnost výpočtu (stejnou)
+		- Prewitové filtr má menší velikost
+		- Prewitové dává větší důraz na okolní pixely (stejný jako na střední)
+- !Jakého principu využívá Harrisův detektor rohů
+	- ANO
+		- Vlastních vektorů a vlastních čísel okolních pixelů
+		- Založen na Taylorově rozvoji **1.** řádu funkce dvou proměnných (lokální aprox. obrazu)
+	- NE
+		- Segmentace pomocí adaptivního prahu
+		- Jedná se o filtraci derivací **2.** řádu nejdříve v x a následně y směru
+		- Segmentace pomocí Otsouvy metody
+		- Je to kaskáda metod hranových detektorů
+- !Obrazek před a po filtraci - Byl použit filtr Prewittové, jak vypadal? (Na obrazku zůstaly horizontální hrany)
+	- nahoře samé -1, dole 1 - lze odvodit snadno pomocí kombinace
+- Co je to zkratka LoG?
+	- laplacian of gaussian
+	- ANO
+		- Kombinace filtrů Laplacova a Gaussova
+	- NE
+		- Aplikace Laplacova filtru o velké velikosti
+		- Aplikace Logaritmického filtru pro nalezení extrémů
+		- Aplikace Gaussova filtru iterativně několikrát po sobě dokud nesaturuje při nalezení šumu
+# Segmentace
+- !Watershed segmentační metoda
+	- ANO
+		- je citlivá na šum
+		- je vhodná využít na obrázek po transformaci (např. vzdálenostní)
+		- je schopna najít hranice i v místech, kde by hranové detekce nefungovaly
+		- slouží k oddělování objektů, kde není jasný přechod
+	- NE
+		- není citlivá na šum (přesegmentování)
+- !mean-shift segmentace
+	- ![[Pasted image 20250108191412.png]]
+	- tady by mělo být všechno špatně asi
+- !prahování obrázek čárovky
+	- ![[Pasted image 20250108191916.png]]
+	- pod tresh - černá (k 0)
+	- nad tresh - bílá (k 255)
+	- mezi - bílá (viz cvičení)
+- !Water shed segmentace se znackama
+	- ANO
+		- Pouziva vzdálenosti pro výpočet značek
+	- NE
+		- Je nachylna na sum
+		- Je výpočetně náročnější než bez značek
+		-  Pouziva FT pro výpočet značek
+- Jednoduché prahování
+	- ANO
+		- Vyuziva jeden práh 0-255
+		- Je nachylna na sum
+		- Funguje na barevné obrázky
+		- Funguje na černobíle obrázky
+	- NE
+		- 
+# Pokročilé
+- jaké techniky zpracování obrazu se často **přeskakují** při používání deep learning
+	- ANO
+		- velká část předzpracování obrazu
+		- extrakce příznaků
+	- NE
+		- učení klasifikátoru
+		- přiřazení třídy klasifikace
+- co patří mezi úlohy oboru počítačového vidění
+	- ANO
+		- morfologie snímků
+		- klasifikace obrázků
+		- lokalizace objektů
+		- detekce objektů
+		- sémantická segmentace
+		- segmentace instance
+		- textový popis obrázků
+		- komprese snimku
+
+- !Jaké přístupy patří mezi **tradiční** přístupy k úlohám detekce a rozpoznávání?
+	- ANO
+		- barevné rozpoznávání
+		- tvarové rozpoznávání
+		- klasifikace pomocí haar cascades
+	- NE
+		- detekce pomocí konvolučních neuronových sítí
+		- cokoliv s deep learningem
+
+- 18) Mezi aplikace oborů strojového vidění patří
+	- ANO
+		Výroba plošných skel
+		Dohledové systémy
+		Počítání oveček
+	- NE
+		Optické brány (fotobuňky)
