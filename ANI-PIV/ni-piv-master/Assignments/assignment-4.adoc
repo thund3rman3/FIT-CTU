@@ -1,0 +1,116 @@
+= Assignment 4
+
+IMPORTANT: **Deadline** for submission: **TBD**
+
+This assignment covers exercises 10 and 11:
+
+- xref:../tutorials/exercise-10.adoc[Exercise 10: Superpixel-based Color Matching]
+- xref:../tutorials/exercise-11.adoc[Exercise 11: Motion and Tracking]
+
+== Objective
+The goal of this assignment is to implement segmentation and tracking pipelines (as described in Exercises xref:../tutorials/exercise-10.adoc[10] and xref:../tutorials/exercise-11.adoc[11]). 
+You will first apply **superpixel algorithms** to segment histology images based on color similarity. Subsequently, you will implement **motion analysis** techniques, comparing background subtraction methods and utilizing both sparse and dense optical flow to track objects in video sequences.
+
+---
+
+== Part 1: Superpixel Segmentation
+
+Implement a segmentation pipeline for histology images using superpixels and color matching (see xref:../tutorials/exercise-10.adoc[Exercise 10]).
+
+**Tasks:**
+
+1.  **Reference Color:** Extract the average L*a*b* color vector from a reference sample (or manually selected region).
+
+2.  **Superpixel Extraction:** Apply at least two different superpixel algorithms (e.g., `SLIC`, `SEEDS`, or `LSC`) to the target image.
+
+3.  **Segmentation:**
+    
+    * Compute the mean color for each superpixel.
+    
+    * Calculate the Euclidean distance between the superpixel mean and the reference color.
+    
+    * Threshold this distance to select relevant regions.
+
+4.  **Visualization:** Outline the selected superpixels on the original image, generate a distance heatmap and visually compare selected methods.
+
+*Deliverables:*
+
+* Implementation of the pipeline.
+
+* Visual comparison of results using different superpixel methods (SLIC vs. SEEDS/LSC).
+
+---
+
+== Part 2: Motion Analysis and Tracking
+
+Analyze motion in a video sequence (static camera, multiple moving objects) using background subtraction and optical flow (see xref:../tutorials/exercise-11.adoc[Exercise 11]).
+
+=== 2.1 Background Subtraction
+Compare different background subtraction techniques to segment moving foreground objects.
+
+* Implement and compare:
+   
+    * **Accumulated Weighted Average**
+   
+    * **Mixture of Gaussians (MOG2)**
+   
+    * (Optional) Custom Accumulator: Design your own simple accumulator (e.g., using median or moving average).
+
+* *Goal:* Visualize the process (background, binary foreground mask, ...).
+
+=== 2.2 Sparse Optical Flow (Feature Tracking)
+Implement the **Lucas-Kanade** method to track specific keypoints (Shi-Tomasi corners) across frames.
+
+**Discussion points to address in the report:**
+
+* *Initialization:* How do you handle objects that enter the scene later? (How do you detect and start tracking them?).
+
+* *Redundancy:* How do you prevent detecting and tracking duplicate feature points on the same object?.
+
+* *Quality:* How do you determine which features are "good" (worth tracking) and when to stop tracking a point (e.g., if it leaves the scene)?.
+
+=== 2.3 Dense Optical Flow (Object Tracking)
+Implement the **Farneback** method to compute dense optical flow to track moving objects.
+
+**Challenge to address:**
+
+* *Collisions:* In scenes where objects move close to each other or cross paths, how do you distinguish them? Document your approach to separating bounding boxes or identifying collisions.
+
+*Deliverables:*
+
+* Visualizations of trajectories (Sparse Flow) and bounding boxes / moving objects with color-map indicating direction and speed (Dense Flow).
+
+* Written discussion answering the specific questions above.
+
+---
+
+== Submission
+
+Submit both **report + code**:
+
+**1. Code:**
+
+* Clean, commented scripts for Superpixel segmentation and Motion tracking tasks.
+
+**2. Report:**
+
+* **Part 1:** Comparison of superpixel methods and parameter choices (number of superpixels, threshold values).
+
+* **Part 2:** Visual comparison of background subtraction methods.
+
+* **Part 2 (Discussion):** Answers to the implementation challenges in Optical Flow (handling new objects, duplicates, and collisions).
+
+|===
+| Component | Max Points
+
+| Technical solution (Code implementation & Functionality)
+| 6
+
+| Implementation - structure & formal level
+| 2
+
+| Report - structure, formal level & discussion quality
+| 2
+|===
+
+WARNING: Submission of *both* the *report and* the *source code* is a prerequisite for any evaluation (if not submitted, 0 points).

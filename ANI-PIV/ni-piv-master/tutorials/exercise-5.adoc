@@ -1,0 +1,41 @@
+= Exercise 5: U-Net Evaluation and Hyperparameter Tuning
+
+In this exercise, you will continue working with the *U-Net model* you trained in the previous Exercise 4. The main goal is to *understand and evaluate* the performance of your model, and to *experiment with hyperparameters* (in particular, the depth of the U-Net). The task will also be to learn how to *qualitatively* and *quantitatively* evaluate segmentation models.
+
+---
+
+== Part 1: Model Evaluation 
+
+=== Qualitative Evaluation
+
+Look at the segmentation masks predicted by your U-Net model:
+
+* visualize the predicted masks for several teset images
+* compare them visually with the ground truth masks
+* identify **where the model fails** (e.g., misses thin tubules, produces false positives, outputs noisy masks, ...)
+* try to explain *why* these failures occur
+
+=== Quantitative Evaluation
+
+Compute numerical metrics for your model predictions (see link:../lectures/files/PIV_4-_2025_Computer_vision_using_CNN.pdf[Lecture 4]):
+
+* **Accuracy** – fraction of correctly predicted pixels.
+* **Precision** – how many predicted tubule pixels are correct.
+* **Recall** – how many true tubule pixels are detected.
+* **F1-score** – balance between precision and recall.
+* **Dice coefficient** – overlap measure between predicted and ground truth masks.
+
+---
+
+== Part 2: Hyperparameter Tuning
+
+Focus on the *depth of the U-Net* (number of downsampling/upsampling stages):
+
+* implement U-Net with different depths (e.g., 2, 3, 4, ... levels)
+* train each variant on the same dataset split
+* compare training time, validation Dice score
+* _What happens if the network is too shallow/too deep?_
+* _Which depths work best for your dataset and why?_
+
+Other than that you can also experiment with the *number of feature channels*, *kernel sizes* (e.g., 3x3, 5x5), *pooling/stride* choices. Experiment also with the loss function itself (`BCEWithLogits`, `DiceLoss` vs. `BCE+Dice` combination).
+

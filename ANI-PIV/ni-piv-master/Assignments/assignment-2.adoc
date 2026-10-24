@@ -1,0 +1,89 @@
+# Assignment 2
+
+IMPORTANT: **Deadline** for submission: **TBD**
+
+This assignment covers exercises 4, 5, 6:
+
+- xref:../tutorials/exercise-4.adoc[Exercise 4: U-Net Segmentation 1 (architecture design, training)]
+- xref:../tutorials/exercise-5.adoc[Exercise 5: U-Net Segmentation 2 (quantitative and qualitative eval + hyperparam. tuning)]
+- xref:../tutorials/exercise-6.adoc[Exercise 6: U-Net Segmentation 3 (tasks finalization)]
+
+### Objective
+Implementation, training, evaluation, and tuning of a *U-Net segmentation model* on the microscopy tubule dataset prepared in xref:../Assignments/assignment-1.adoc[Assignment 1].
+
+---
+
+### Part 1: Dataset Preparation
+
+- Use your dataset from xref:../Assignments/assignment-1.adoc[Assignment 1] (image-mask pairs).
+- Split the data into training and validation subsets (optionally consider test set, but remember that our dataset is small).
+- Implement a PyTorch `Dataset` and `DataLoader` with appropriate preprocessing (grayscale, fixed size, normalization, binary masks, augmentations, ...).
+
+*Deliverables:* `CiliaDataset` class implementation (or other custom image-mask pair sampling).
+
+---
+
+### Part 2: U-Net Architecture
+
+- Build a custom *U-Net* model in PyTorch.
+- Include encoder (downsampling), decoder (upsampling), and skip connections.
+
+*Deliverables:* U-Net model architecture, explanation of the design choices
+
+---
+
+### Part 3: Model Training
+
+- Experiment with various loss functions (`BCE`, Dice loss, or their combinations, ...)
+- Track traininig and validation losses
+
+*Deliverables:* training loop implementation, visualizations of the process (training vs. validation loss, Dice score)
+
+---
+
+### Part 4: Model Evaluation 
+
+*Qualitative:* 
+
+- show example predictions vs. ground truth
+- identify typical *failure cases* (false positives, missed tubules, noisy masks, ...) + try to explain why this happens
+
+*Quantitative:*
+
+- compute and report accuracy, precision, recall, F1-score, dice coefficient (+ FP, FN, TP, TN)
+- provide table of quantitative metrics, visualize confusion matrix
+
+---
+
+### Part 5: Hyperparameter Tuning 
+
+- experiment with *U-Net depth* (try small vs. high number of levels)
+- experiment with the number of convolutional layers, kernel sizes, pooling types (max/average), ...
+- What happens if the network is too shallow or too deep? Which depth worked best and why?
+
+---
+
+## Submission 
+
+TIP: For details on **assignment submission** (how to guide) refer to the link:https://help.fit.cvut.cz/gitlab/git-class-repos/examples/homework.html?utm_source=chatgpt.com#_postup-odevzd%C3%A1n%C3%AD-%C3%BAkolu-pro-studenta[official tutorial]. *TL;DR:* proceed the same way as for the assignment 1, just create a new branch for the assignment 2.
+
+Submit both *report + code*:
+
+- *1. Code:* dataset class, U-Net implementation, training loop, evaluation 
+- *2. Report:* dataset preparation and preprocessing summary, U-Net architecture description, training/validation curves, qualitative and quantitative evaluation results, hyperparameter tuning results + discussion
+
+|===
+| Component | Max Points
+
+| Technical solution
+| 6
+
+| Implementation - structure & formal level
+| 2
+
+| Report - structure & formal level
+| 2
+|===
+
+WARNING: Submission of *both* the *report and* the *source code* is a prerequisite for any evaluation (if not submitted, 0 points).
+

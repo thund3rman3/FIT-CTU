@@ -1,0 +1,35 @@
+# Assignment 1
+
+IMPORTANT: **Deadline** for submission: **TBD**
+
+This assignment covers the first three exercises:
+
+- xref:../tutorials/exercise-1.adoc[Exercise 1: Image processing and enhancement]
+- xref:../tutorials/exercise-2.adoc[Exercise 2: Morphological image reconstruction]
+- xref:../tutorials/exercise-3.adoc[Exercise 3: Image filtration]
+
+Task is to apply the studied techniques (creativity is welcome!) to construct a dataset of processed image samples together with their corresponding segmentation masks of cilia. 
+*Assignment submission* should contain a *report* file (`.md`/`.ipynb`) describing the applied methods' process and the *implementation* source code.
+
+TIP: For details on **assignment submission** (how to guide) refer to the link:https://help.fit.cvut.cz/gitlab/git-class-repos/examples/homework.html?utm_source=chatgpt.com#_postup-odevzd%C3%A1n%C3%AD-%C3%BAkolu-pro-studenta[official tutorial].
+
+### Evaluation of the report:
+
+|===
+| Component | Max Points
+
+| Technical solution
+| 6
+
+| Implementation - structure & formal level
+| 2
+
+| Report - structure & formal level
+| 2
+
+| *Total (Assignment 1)*
+| *10*
+|===
+
+
+WARNING: Submission of *both* the *report and* the *source code* is a prerequisite for any evaluation (if not submitted, 0 points).

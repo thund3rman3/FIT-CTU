@@ -1,0 +1,3 @@
+Adresáře nazvané `files` (a jejich obsah) se ve výchozím nastavení nezobrazují
+v navigaci na publikovaných stránkách. Sem umísťujte obrázky, PDF a jiné
+soubory, které odkazujete z .adoc stránek.

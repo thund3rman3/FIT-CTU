@@ -1,0 +1,4 @@
+# Exercise 12: Motion and Tracking (tasks finalization)
+
+
+Finalize the tasks from xref:exercise-10.adoc[Exercise 10] and xref:exercise-11.adoc[Exercise 11] and prepare for xref:../Assignments/assignment-4.adoc[Assignment 4] submission.
