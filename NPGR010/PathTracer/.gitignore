@@ -1,0 +1,9 @@
+/build
+
+# Rendered images
+*.bmp
+*.hdr
+*.pfm
+
+# macOS
+.DS_Store
