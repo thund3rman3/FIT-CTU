@@ -8,10 +8,8 @@
 #include "math.hpp"
 #include "rng.hpp"
 
-class AbstractLight
-{
+class AbstractLight {
 public:
-
     /**
      * Randomly chooses a point on the light source
      * Arguments:
@@ -22,9 +20,7 @@ public:
      *  - the illumination intensity corresponding to the sampled direction
      *  - the probability density (PDF) of choosing this point
      */
-    virtual std::tuple<Vec3f, Vec3f, float> SamplePointOnLight(const Vec3f& origin, Rng& rng) const {
-        throw std::logic_error("Not implemented");
-    }
+    virtual std::tuple<Vec3f, Vec3f, float> SamplePointOnLight(const Vec3f &origin, Rng &rng) const = 0;
 
     /**
      * Returns the probability density corresponding to samplePointOnLight,
@@ -33,85 +29,137 @@ public:
      *  - origin = our current position in the scene
      *  - lightPoint = the randomly sampled point on the light source
      */
-    virtual float PDF(const Vec3f& origin, const Vec3f& lightPoint) const {
-        throw std::logic_error("Not implemented");
-    }
+    virtual float PDF(const Vec3f &origin, const Vec3f &lightPoint) const = 0;
 
     /**
      * Returns the illumination intensity in the given direction
      * Arguments:
      *  - direction = direction towards the light source
      */
-    virtual Vec3f Evaluate(const Vec3f& direction) const {
-        throw std::logic_error("Not implemented");
-    }
+    virtual Vec3f Evaluate(const Vec3f &direction) const = 0;
 
     virtual ~AbstractLight() = default;
 };
 
 //////////////////////////////////////////////////////////////////////////
-class AreaLight : public AbstractLight
-{
+class AreaLight : public AbstractLight {
 public:
-
-    AreaLight(
-        const Vec3f &aP0,
-        const Vec3f &aP1,
-        const Vec3f &aP2)
-    {
-        p0 = aP0;
-        e1 = aP1 - aP0;
-        e2 = aP2 - aP0;
+    AreaLight(const Vec3f &A, const Vec3f &B, const Vec3f &C) {
+        p0 = A;
+        e1 = B - A;
+        e2 = C - A;
 
         Vec3f normal = Cross(e1, e2);
-        float len    = normal.Length();
-        mInvArea     = 2.f / len;
+        float len = normal.Length();
+        mInvArea = 2.f / len;
         mFrame.SetFromZ(normal);
     }
 
+    std::tuple<Vec3f, Vec3f, float> SamplePointOnLight(const Vec3f &origin, Rng &rng) const override {
+        float rnd1 = rng.GetFloat();
+        float rnd2 = rng.GetFloat();
+        float b1 = rnd1 + rnd2 > 1.0f ? 1.0f - rnd1 : rnd1;
+        float b2 = rnd1 + rnd2 > 1.0f ? 1.0f - rnd2 : rnd2;
+        Vec3f pointOnLight = p0 + e1 * b1 + e2 * b2;
+
+        float pdf = PDF(origin, pointOnLight);
+        if (pdf <= 0.0f)
+            return {pointOnLight, Vec3f(0), 0.0f};
+
+        Vec3f dirFromLight = origin - pointOnLight;
+        dirFromLight = Normalize(dirFromLight);
+
+        return {pointOnLight, Evaluate(dirFromLight), mInvArea};
+    }
+
+    float PDF(const Vec3f &origin, const Vec3f &lightPoint) const override {
+        Vec3f dirToLight = lightPoint - origin;
+        float dstSquared = dirToLight.LenSqr();
+        dirToLight = Normalize(dirToLight);
+        Vec3f idealReflection(-dirToLight.x, -dirToLight.y, -dirToLight.z);
+        float cosThetaLight = Dot(mFrame.Normal(), idealReflection);
+
+        if (cosThetaLight <= 0)
+            return 0.0f;
+
+        return dstSquared * mInvArea / cosThetaLight;
+    }
+
+    Vec3f Evaluate(const Vec3f &direction) const override {
+        float cosTheta = Dot(mFrame.Normal(), direction);
+        return cosTheta > 0.0f ? mRadiance : Vec3f(0);
+    }
+
 public:
-    Vec3f p0, e1, e2;
     CoordinateFrame mFrame;
+    Vec3f p0, e1, e2;
     Vec3f mRadiance;
-    float mInvArea;
+    float mInvArea; // pdf
 };
 
 //////////////////////////////////////////////////////////////////////////
-class PointLight : public AbstractLight
-{
+class PointLight : public AbstractLight {
 public:
-
-    PointLight(const Vec3f& aPosition)
-    {
+    explicit PointLight(const Vec3f &aPosition) {
         mPosition = aPosition;
     }
 
-    virtual std::tuple<Vec3f, Vec3f, float> SamplePointOnLight(const Vec3f& origin, Rng& rng) const override {
+    std::tuple<Vec3f, Vec3f, float> SamplePointOnLight(const Vec3f &origin, Rng &rng) const override {
         Vec3f outgoingDirection = mPosition - origin;
         float distanceSquared = outgoingDirection.LenSqr();
 
-		return {mPosition, mIntensity / distanceSquared, 1.0f};
+        return {mPosition, mIntensity / distanceSquared, 1.0f};
+    }
+
+    float PDF(const Vec3f &origin, const Vec3f &lightPoint) const override {
+        return 1.0f;
+    }
+
+    Vec3f Evaluate(const Vec3f &direction) const override {
+        return Vec3f(0);
     }
 
 public:
-
     Vec3f mPosition;
     Vec3f mIntensity;
 };
 
 
 //////////////////////////////////////////////////////////////////////////
-class BackgroundLight : public AbstractLight
-{
+class BackgroundLight : public AbstractLight {
 public:
-    BackgroundLight()
-    {
+    BackgroundLight() {
         mBackgroundColor = Vec3f(135, 206, 250) / Vec3f(255.f);
         mRadius = 100.f; // a radius big enough to cover the whole scene
     }
 
-public:
+    std::tuple<Vec3f, Vec3f, float> SamplePointOnLight(const Vec3f &origin, Rng &rng) const override {
+        float rnd1 = rng.GetFloat();
+        float rnd2 = rng.GetFloat();
 
+        float sampleHeight = 1.0f - 2.0f * rnd1; // <-1;1)
+        float r = std::sqrt(std::max(0.0f, 1.0f - sampleHeight * sampleHeight));
+        float phi = 2.0f * PI_F * rnd2; // Azimuthal angle <0;2PI)
+
+        Vec3f dir(r * std::cos(phi), r * std::sin(phi), sampleHeight);
+
+        Vec3f lightPoint = Dot(dir, origin* mRadius);
+
+        float pdf = PDF(origin, lightPoint);
+
+        return {lightPoint, mBackgroundColor, pdf};
+    }
+
+    float PDF(const Vec3f &origin, const Vec3f &lightPoint) const override {
+        return 1 / (4.0f * PI_F);
+    }
+
+    Vec3f Evaluate(const Vec3f &direction) const override {
+        return mBackgroundColor;
+    }
+
+public:
     Vec3f mBackgroundColor;
-    float mRadius; // we model the background light as a huge sphere around the whole scene, with a given radius
+    // we model the background light as a huge sphere around the whole scene, with a given radius
+    float mRadius;
 };

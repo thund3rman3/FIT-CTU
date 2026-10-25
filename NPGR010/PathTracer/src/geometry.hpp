@@ -5,21 +5,18 @@
 #include "math.hpp"
 #include "ray.hpp"
 
-//////////////////////////////////////////////////////////////////////////
 // Geometry
 
-class AbstractGeometry
-{
+class AbstractGeometry {
 public:
-
-    virtual ~AbstractGeometry(){};
+    virtual ~AbstractGeometry() {
+    };
 
     // Finds the closest intersection
-    virtual bool Intersect (const Ray& aRay, Intersection& oResult) const = 0;
+    virtual bool Intersect(const Ray &aRay, Intersection &oResult) const = 0;
 
     // Finds any intersection, default calls Intersect
-    virtual bool IntersectP(const Ray& aRay, Intersection& oResult) const
-    {
+    virtual bool IntersectP(const Ray &aRay, Intersection &oResult) const {
         return Intersect(aRay, oResult);
     }
 
@@ -27,69 +24,48 @@ public:
     virtual void GrowBBox(Vec3f &aoBBoxMin, Vec3f &aoBBoxMax) = 0;
 };
 
-class GeometryList : public AbstractGeometry
-{
+class GeometryList : public AbstractGeometry {
 public:
-
-    virtual ~GeometryList()
-    {
-        for(int i=0; i<(int)mGeometry.size(); i++)
+    ~GeometryList() override {
+        for (int i = 0; i < static_cast<int>(mGeometry.size()); i++)
             delete mGeometry[i];
     };
 
-    virtual bool Intersect(const Ray& aRay, Intersection& oResult) const
-    {
+    bool Intersect(const Ray &aRay, Intersection &oResult) const override {
         bool anyIntersection = false;
 
-        for(int i=0; i<(int)mGeometry.size(); i++)
-        {
-            bool hit = mGeometry[i]->Intersect(aRay, oResult);
-
-            if(hit)
+        for (int i = 0; i < static_cast<int>(mGeometry.size()); i++) {
+            if (bool hit = mGeometry[i]->Intersect(aRay, oResult))
                 anyIntersection = hit;
         }
 
         return anyIntersection;
     }
 
-    virtual bool IntersectP(
-        const Ray &aRay,
-        Intersection     &oResult) const
-    {
-        for(int i=0; i<(int)mGeometry.size(); i++)
-        {
-            if(mGeometry[i]->IntersectP(aRay, oResult))
+    bool IntersectP(const Ray &aRay, Intersection &oResult) const override {
+        for (int i = 0; i < static_cast<int>(mGeometry.size()); i++) {
+            if (mGeometry[i]->IntersectP(aRay, oResult))
                 return true;
         }
 
         return false;
     }
 
-    virtual void GrowBBox(
-        Vec3f &aoBBoxMin,
-        Vec3f &aoBBoxMax)
-    {
-        for(int i=0; i<(int)mGeometry.size(); i++)
+    void GrowBBox(Vec3f &aoBBoxMin, Vec3f &aoBBoxMax) override {
+        for (int i = 0; i < static_cast<int>(mGeometry.size()); i++)
             mGeometry[i]->GrowBBox(aoBBoxMin, aoBBoxMax);
     }
 
 public:
-
-    std::vector<AbstractGeometry*> mGeometry;
+    std::vector<AbstractGeometry *> mGeometry;
 };
 
-class Triangle : public AbstractGeometry
-{
+class Triangle : public AbstractGeometry {
 public:
+    Triangle() {
+    }
 
-    Triangle(){}
-
-    Triangle(
-        const Vec3f &p0,
-        const Vec3f &p1,
-        const Vec3f &p2,
-        int         aMatID)
-    {
+    Triangle(const Vec3f &p0, const Vec3f &p1, const Vec3f &p2, int aMatID) {
         p[0] = p0;
         p[1] = p1;
         p[2] = p2;
@@ -97,10 +73,7 @@ public:
         mNormal = Normalize(Cross(p[1] - p[0], p[2] - p[0]));
     }
 
-    virtual bool Intersect(
-        const Ray &aRay,
-        Intersection     &oResult) const
-    {
+    bool Intersect(const Ray &aRay, Intersection &oResult) const override {
         const Vec3f ao = p[0] - aRay.origin;
         const Vec3f bo = p[1] - aRay.origin;
         const Vec3f co = p[2] - aRay.origin;
@@ -113,16 +86,13 @@ public:
         const float v1d = Dot(v1, aRay.direction);
         const float v2d = Dot(v2, aRay.direction);
 
-        if(((v0d < 0.f)  && (v1d < 0.f)  && (v2d < 0.f)) ||
-           ((v0d >= 0.f) && (v1d >= 0.f) && (v2d >= 0.f)))
-        {
+        if (((v0d < 0.f) && (v1d < 0.f) && (v2d < 0.f)) || ((v0d >= 0.f) && (v1d >= 0.f) && (v2d >= 0.f))) {
             const float distance = Dot(mNormal, ao) / Dot(mNormal, aRay.direction);
 
-            if((distance > aRay.offset) & (distance < oResult.distance))
-            {
+            if ((distance > aRay.offset) & (distance < oResult.distance)) {
                 oResult.normal = mNormal;
-                oResult.materialID  = matID;
-                oResult.distance   = distance;
+                oResult.materialID = matID;
+                oResult.distance = distance;
                 return true;
             }
         }
@@ -130,14 +100,9 @@ public:
         return false;
     }
 
-    virtual void GrowBBox(
-        Vec3f &aoBBoxMin,
-        Vec3f &aoBBoxMax)
-    {
-        for(int i=0; i<3; i++)
-        {
-            for(int j=0; j<3; j++)
-            {
+    void GrowBBox(Vec3f &aoBBoxMin, Vec3f &aoBBoxMax) override {
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
                 aoBBoxMin.Get(j) = std::min(aoBBoxMin.Get(j), p[i].Get(j));
                 aoBBoxMax.Get(j) = std::max(aoBBoxMax.Get(j), p[i].Get(j));
             }
@@ -145,35 +110,26 @@ public:
     }
 
 public:
-
     Vec3f p[3];
-    int   matID;
+    int matID{};
     Vec3f mNormal;
 };
 
-class Sphere : public AbstractGeometry
-{
+class Sphere : public AbstractGeometry {
 public:
+    Sphere() {
+    }
 
-    Sphere(){}
-    
-    Sphere(
-        const Vec3f &aCenter,
-        float       aRadius,
-        int         aMatID)
-    {
+    Sphere(const Vec3f &aCenter, float aRadius, int aMatID) {
         center = aCenter;
         radius = aRadius;
-        matID  = aMatID;
+        matID = aMatID;
     }
 
     // Taken from:
     // http://wiki.cgsociety.org/index.php/Ray_Sphere_Intersection
 
-    virtual bool Intersect(
-        const Ray &aRay,
-        Intersection     &oResult) const
-    {
+    bool Intersect(const Ray &aRay, Intersection &oResult) const override {
         // we transform ray origin into object space (center == origin)
         const Vec3f transformedOrigin = aRay.origin - center;
 
@@ -183,9 +139,9 @@ public:
 
         // Must use doubles, because when B ~ sqrt(B*B - 4*A*C)
         // the resulting t is imprecise enough to get around ray epsilons
-        const double disc = B*B - 4*A*C;
+        const double disc = B * B - 4 * A * C;
 
-        if(disc < 0)
+        if (disc < 0)
             return false;
 
         const double discSqrt = std::sqrt(disc);
@@ -194,39 +150,36 @@ public:
         double t0 = q / A;
         double t1 = C / q;
 
-        if(t0 > t1) std::swap(t0, t1);
+        if (t0 > t1)
+            std::swap(t0, t1);
 
         float resT;
 
-        if(t0 > aRay.offset && t0 < oResult.distance)
-            resT = float(t0);
-        else if(t1 > aRay.offset && t1 < oResult.distance)
-            resT = float(t1);
+        if (t0 > aRay.offset && t0 < oResult.distance)
+            resT = static_cast<float>(t0);
+        else if (t1 > aRay.offset && t1 < oResult.distance)
+            resT = static_cast<float>(t1);
         else
             return false;
 
-        oResult.distance   = resT;
-        oResult.materialID  = matID;
+        oResult.distance = resT;
+        oResult.materialID = matID;
         oResult.normal = Normalize(transformedOrigin + Vec3f(resT) * aRay.direction);
         return true;
     }
 
-    virtual void GrowBBox(
-        Vec3f &aoBBoxMin,
-        Vec3f &aoBBoxMax)
-    {
-        for(int i=0; i<8; i++)
-        {
+    void GrowBBox(Vec3f &aoBBoxMin, Vec3f &aoBBoxMax) override {
+        for (int i = 0; i < 8; i++) {
             Vec3f p = center;
             Vec3f half(radius);
 
-            for(int j=0; j<3; j++)
-                if(i & (1 << j)) half.Get(j) = -half.Get(j);
-            
+            for (int j = 0; j < 3; j++)
+                if (i & (1 << j))
+                    half.Get(j) = -half.Get(j);
+
             p += half;
 
-            for(int j=0; j<3; j++)
-            {
+            for (int j = 0; j < 3; j++) {
                 aoBBoxMin.Get(j) = std::min(aoBBoxMin.Get(j), p.Get(j));
                 aoBBoxMax.Get(j) = std::max(aoBBoxMax.Get(j), p.Get(j));
             }
@@ -234,8 +187,7 @@ public:
     }
 
 public:
-
     Vec3f center;
-    float radius;
-    int   matID;
+    float radius{};
+    int matID{};
 };

@@ -9,16 +9,12 @@
 #define EPSILON_RAY    1e-3f
 
 // sRGB luminance
-float Luminance(const Vec3f& aRGB)
-{
-    return 0.212671f * aRGB.x +
-        0.715160f * aRGB.y +
-        0.072169f * aRGB.z;
+inline float Luminance(const Vec3f &aRGB) {
+    return 0.212671f * aRGB.x + 0.715160f * aRGB.y + 0.072169f * aRGB.z;
 }
 
 // reflect vector through (0,0,1)
-Vec3f ReflectLocal(const Vec3f& aVector)
-{
+inline Vec3f ReflectLocal(const Vec3f &aVector) {
     return Vec3f(-aVector.x, -aVector.y, aVector.z);
 }
 
@@ -27,18 +23,10 @@ Vec3f ReflectLocal(const Vec3f& aVector)
 // WtoA = PdfW * cosine / distance_squared
 // AtoW = PdfA * distance_squared / cosine
 
-float PdfWtoA(
-    const float aPdfW,
-    const float aDist,
-    const float aCosThere)
-{
+inline float PdfWtoA(const float aPdfW, const float aDist, const float aCosThere) {
     return aPdfW * std::abs(aCosThere) / Sqr(aDist);
 }
 
-float PdfAtoW(
-    const float aPdfA,
-    const float aDist,
-    const float aCosThere)
-{
+inline float PdfAtoW(const float aPdfA, const float aDist, const float aCosThere) {
     return aPdfA * Sqr(aDist) / std::abs(aCosThere);
 }

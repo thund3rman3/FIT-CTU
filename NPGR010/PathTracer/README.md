@@ -7,8 +7,6 @@ A simple C++17 path tracer used as the starting point for the NPGR010 homeworks.
 - A C++17 compiler with OpenMP (GCC, Clang, or MSVC)
 - CMake 3.16 or newer
 
-macOS users: Apple's compiler needs a few extra steps, see [BUILD_MACOS.md](BUILD_MACOS.md).
-
 ## Building
 
 From the project folder:
@@ -42,6 +40,4 @@ Use the `.hdr` images. They keep the full range of light values, unlike
 `.bmp`, which is clamped and gamma-corrected for quick previews only.
 Open them in [tev](https://github.com/Tom94/tev), an HDR image viewer
 that lets you change the exposure and compare two images. Downloads for
-Windows, Linux and macOS are on its
-[releases page](https://github.com/Tom94/tev/releases); on macOS you can
-also run `brew install --cask tev`.
+Windows, Linux.

@@ -9,7 +9,7 @@ endif()
 
 add_executable(NPGR010 src/pg3render.cpp)
 
-target_compile_features(NPGR010 PRIVATE cxx_std_17)
+target_compile_features(NPGR010 PRIVATE cxx_std_23)
 
 # macOS: Apple clang has no OpenMP runtime; use Homebrew's keg-only libomp
 if(APPLE AND NOT OpenMP_ROOT)
