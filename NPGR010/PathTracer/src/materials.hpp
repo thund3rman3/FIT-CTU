@@ -36,13 +36,13 @@ public:
 
         /** Unit sphere -> radius=1 -> maxHeight = 1 = cos(Theta)
         Theta is angle between normal and outgoing direction
-        Random height from surface on the sphere is 1 - <0;1)
+        Random height from surface on the sphere is 1 - <0;1) = <0;1) cos(theta)
         Not to use uniform sampling, use sqrt to change sample probablity (pdf)
         Get more points as we get closer to the normal (increasing cosine)
         sqrt() - 0.01->0.1, 0.25->0.5, 0.5->0.71 */
         float rnd2 = rng.GetFloat();
-        float cosThetaUniform = 1.0f - rnd2;
-        float cosTheta = std::sqrt(1.0f - cosThetaUniform); // sample height
+        //float cosThetaUniform = 1.0f - rnd2;
+        float cosTheta = std::sqrt(1.0f - rnd2); // sample height
 
         // Horizontal radius in height cosTheta, gotten from Pyhagoras:
         // r^2+cos^2Theta = 1; r = sqrt(1-(1-rnd2))
@@ -72,7 +72,7 @@ public:
      *  - outgoingDirection = a normalized outgoing reflected direction
      */
     Vec3f EvaluateBRDF(const Vec3f &incomingDirection, const Vec3f &outgoingDirection) const {
-        if (incomingDirection.z <= 0 && outgoingDirection.z <= 0) {
+        if (incomingDirection.z <= 0 || outgoingDirection.z <= 0) {
             return Vec3f(0);
         }
 

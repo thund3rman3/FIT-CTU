@@ -135,19 +135,16 @@ public:
 
     std::tuple<Vec3f, Vec3f, float> SamplePointOnLight(const Vec3f &origin, Rng &rng) const override {
         float rnd1 = rng.GetFloat();
-        float rnd2 = rng.GetFloat();
-
-        float sampleHeight = 1.0f - 2.0f * rnd1; // <-1;1)
-        float r = std::sqrt(std::max(0.0f, 1.0f - sampleHeight * sampleHeight));
-        float phi = 2.0f * PI_F * rnd2; // Azimuthal angle <0;2PI)
+        float sampleHeight = 1.0f - 2.0f * rnd1; // <-1;1) cos(theta)
+        // Horizontal radius in height cosTheta, gotten from Pyhagoras:
+        // r^2+cos^2Theta = 1; r = sqrt(1-(1-2*rnd1)^2); r = sqrt(4*(rnd1-rnd1^2))
+        float r = std::sqrt(std::max(0.0f, 4*(rnd1-rnd1*rnd1)));
+        float phi = 2.0f * PI_F * rng.GetFloat(); // Azimuthal angle <0;2PI)
 
         Vec3f dir(r * std::cos(phi), r * std::sin(phi), sampleHeight);
+        Vec3f lightPoint = dir + origin* mRadius;
 
-        Vec3f lightPoint = Dot(dir, origin* mRadius);
-
-        float pdf = PDF(origin, lightPoint);
-
-        return {lightPoint, mBackgroundColor, pdf};
+        return {lightPoint, Evaluate(dir), PDF(origin, lightPoint)};
     }
 
     float PDF(const Vec3f &origin, const Vec3f &lightPoint) const override {
