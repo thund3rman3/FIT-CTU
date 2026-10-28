@@ -37,11 +37,11 @@ public:
         /** Unit sphere -> radius=1 -> maxHeight = 1 = cos(Theta)
         Theta is angle between normal and outgoing direction
         Random height from surface on the sphere is 1 - <0;1) = <0;1) cos(theta)
+        float cosThetaUniform = 1.0f - rnd2
         Not to use uniform sampling, use sqrt to change sample probablity (pdf)
         Get more points as we get closer to the normal (increasing cosine)
         sqrt() - 0.01->0.1, 0.25->0.5, 0.5->0.71 */
         float rnd2 = rng.GetFloat();
-        //float cosThetaUniform = 1.0f - rnd2;
         float cosTheta = std::sqrt(1.0f - rnd2); // sample height
 
         // Horizontal radius in height cosTheta, gotten from Pyhagoras:
@@ -52,16 +52,19 @@ public:
         Vec3f intensity = EvaluateBRDF(incomingDirection, outDir);
         float pdf = PDF(incomingDirection, outDir);
         return {outDir, intensity, pdf};
-        }
+    }
 
-        /**
-         * Returns the probability density corresponding to sampleReflectedDirection,
-         * i.e., what is the probability that calling sampleReflectedDirection would randomly choose the given outgoingDirection
-         * Arguments:
-         *  - incomingDirection = a normalized direction towards the previous (origin) point in the scene
-         *  - outgoingDirection = the randomly sampled (normalized) outgoing direction
-         */
+    /**
+     * Returns the probability density corresponding to sampleReflectedDirection,
+     * i.e., what is the probability that calling sampleReflectedDirection would randomly choose the given outgoingDirection
+     * Arguments:
+     *  - incomingDirection = a normalized direction towards the previous (origin) point in the scene
+     *  - outgoingDirection = the randomly sampled (normalized) outgoing direction
+     */
     float PDF(const Vec3f &incomingDirection, const Vec3f &outgoingDirection) const {
+        if (outgoingDirection.z <= 0.0f)
+            return 0.0f;
+
         return outgoingDirection.z * INV_PI_F;
     }
 
@@ -72,19 +75,21 @@ public:
      *  - outgoingDirection = a normalized outgoing reflected direction
      */
     Vec3f EvaluateBRDF(const Vec3f &incomingDirection, const Vec3f &outgoingDirection) const {
-        if (incomingDirection.z <= 0 || outgoingDirection.z <= 0) {
+        if (incomingDirection.z <= 0 || outgoingDirection.z <= 0)
             return Vec3f(0);
-        }
 
         Vec3f diffuseComponent = mDiffuseReflectance * INV_PI_F;
+
+        if (mPhongReflectance.Max() <= 0.0f)
+            return diffuseComponent;
 
         Vec3f idealReflection(-incomingDirection.x, -incomingDirection.y, incomingDirection.z);
 
         float cosAlpha = Dot(idealReflection, outgoingDirection);
         cosAlpha = std::max(0.0f, cosAlpha);
 
-        float expNorm = (mPhongExponent + 2.0f) / (2.0f * PI_F);
-        Vec3f glossyComponent = mPhongReflectance * expNorm * std::pow(cosAlpha, mPhongExponent);
+        Vec3f Refl_ExpNormalized = mPhongReflectance * (mPhongExponent + 2.0f) / (2.0f * PI_F);
+        Vec3f glossyComponent =  Refl_ExpNormalized * std::pow(cosAlpha, mPhongExponent);
 
         return diffuseComponent + glossyComponent;
     }

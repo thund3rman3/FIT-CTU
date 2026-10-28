@@ -34,9 +34,9 @@ public:
     /**
      * Returns the illumination intensity in the given direction
      * Arguments:
-     *  - direction = direction towards the light source
+     *  - direction = direction from the light source
      */
-    virtual Vec3f Evaluate(const Vec3f &direction) const = 0;
+    virtual Vec3f Evaluate(const Vec3f &dirFromLight) const = 0;
 
     virtual ~AbstractLight() = default;
 };
@@ -63,21 +63,17 @@ public:
         Vec3f pointOnLight = p0 + e1 * b1 + e2 * b2;
 
         float pdf = PDF(origin, pointOnLight);
-        if (pdf <= 0.0f)
-            return {pointOnLight, Vec3f(0), 0.0f};
-
         Vec3f dirFromLight = origin - pointOnLight;
         dirFromLight = Normalize(dirFromLight);
 
-        return {pointOnLight, Evaluate(dirFromLight), mInvArea};
+        return {pointOnLight, Evaluate(dirFromLight), pdf};
     }
 
     float PDF(const Vec3f &origin, const Vec3f &lightPoint) const override {
         Vec3f dirToLight = lightPoint - origin;
         float dstSquared = dirToLight.LenSqr();
         dirToLight = Normalize(dirToLight);
-        Vec3f idealReflection(-dirToLight.x, -dirToLight.y, -dirToLight.z);
-        float cosThetaLight = Dot(mFrame.Normal(), idealReflection);
+        float cosThetaLight = Dot(mFrame.Normal(), -dirToLight);
 
         if (cosThetaLight <= 0)
             return 0.0f;
@@ -85,8 +81,8 @@ public:
         return dstSquared * mInvArea / cosThetaLight;
     }
 
-    Vec3f Evaluate(const Vec3f &direction) const override {
-        float cosTheta = Dot(mFrame.Normal(), direction);
+    Vec3f Evaluate(const Vec3f &dirFromLight) const override {
+        float cosTheta = Dot(mFrame.Normal(), dirFromLight);
         return cosTheta > 0.0f ? mRadiance : Vec3f(0);
     }
 
@@ -115,7 +111,7 @@ public:
         return 1.0f;
     }
 
-    Vec3f Evaluate(const Vec3f &direction) const override {
+    Vec3f Evaluate(const Vec3f &dirFromLight) const override {
         return Vec3f(0);
     }
 
@@ -135,23 +131,23 @@ public:
 
     std::tuple<Vec3f, Vec3f, float> SamplePointOnLight(const Vec3f &origin, Rng &rng) const override {
         float rnd1 = rng.GetFloat();
-        float sampleHeight = 1.0f - 2.0f * rnd1; // <-1;1) cos(theta)
+        float cosTheta = 1.0f - 2.0f * rnd1; // <-1;1) sample height
         // Horizontal radius in height cosTheta, gotten from Pyhagoras:
         // r^2+cos^2Theta = 1; r = sqrt(1-(1-2*rnd1)^2); r = sqrt(4*(rnd1-rnd1^2))
-        float r = std::sqrt(std::max(0.0f, 4*(rnd1-rnd1*rnd1)));
+        float r = std::sqrt(std::max(0.0f, 4 * (rnd1 - rnd1 * rnd1)));
         float phi = 2.0f * PI_F * rng.GetFloat(); // Azimuthal angle <0;2PI)
 
-        Vec3f dir(r * std::cos(phi), r * std::sin(phi), sampleHeight);
-        Vec3f lightPoint = dir + origin* mRadius;
+        Vec3f dir(r * std::cos(phi), r * std::sin(phi), cosTheta);
+        Vec3f lightPoint = origin + dir * mRadius;
 
-        return {lightPoint, Evaluate(dir), PDF(origin, lightPoint)};
+        return {lightPoint, mBackgroundColor, PDF(origin, lightPoint)};
     }
 
     float PDF(const Vec3f &origin, const Vec3f &lightPoint) const override {
         return 1 / (4.0f * PI_F);
     }
 
-    Vec3f Evaluate(const Vec3f &direction) const override {
+    Vec3f Evaluate(const Vec3f &dirFromLight) const override {
         return mBackgroundColor;
     }
 

@@ -37,7 +37,7 @@ public:
         if (mGeometry->Intersect(ray, isect)) {
             isect.lightID = -1;
 
-            if (const auto& it = mMaterial2Light.find(isect.materialID); it != mMaterial2Light.end())
+            if (auto it = mMaterial2Light.find(isect.materialID); it != mMaterial2Light.end())
                 isect.lightID = it->second;
 
             return isect;
@@ -61,7 +61,7 @@ public:
         if (mGeometry->IntersectP(ray, isect)) {
             isect.lightID = -1;
 
-            if (const auto& it = mMaterial2Light.find(isect.materialID); it != mMaterial2Light.end())
+            if (auto it = mMaterial2Light.find(isect.materialID); it != mMaterial2Light.end())
                 isect.lightID = it->second;
 
             return isect;

@@ -7,30 +7,31 @@
 #include <omp.h>
 #include <string>
 #include <vector>
-#include <cstdlib>
+#include <cstdio>
 #include <chrono>
 #include <algorithm>
 #include <filesystem>
-#include <print>
+
+using RenderVec = std::vector<std::unique_ptr<AbstractRenderer>>;
 
 void PrintProgressBar(int current, int total) {
     const double progress = static_cast<double>(current) / total;
     constexpr int barCount = 20;
 
-    std::print("\rProgress:  {:6.2f}% [", 100.0 * progress);
+    std::printf("\rProgress:  %6.2f%% [", 100.0 * progress);
     for (int bar = 1; bar <= barCount; bar++) {
         const double barProgress = static_cast<double>(bar) / barCount;
         if (barProgress <= progress) {
-            std::print("|");
+            std::putchar('|');
         } else {
-            std::print(".");
+            std::putchar('.');
         }
     }
-    std::print("]");
+    std::putchar(']');
     std::fflush(stdout);
 }
 
-void AccumulateFramebuffers(const auto& renderers, Framebuffer& outFramebuffer) {
+void AccumulateFramebuffers(const RenderVec& renderers, Framebuffer& outFramebuffer) {
     int usedRenderers = 0;
 
     for (const auto& renderer : renderers) {
@@ -58,7 +59,7 @@ auto render(const Config &aConfig) {
     omp_set_num_threads(aConfig.mNumThreads);
 
     // Create 1 renderer per thread
-    std::vector<std::unique_ptr<AbstractRenderer> > renderers;
+    std::vector<std::unique_ptr<AbstractRenderer>> renderers;
     renderers.reserve(aConfig.mNumThreads);
 
     for (int i = 0; i < renderers.capacity(); i++) {
@@ -115,17 +116,18 @@ int main(int argc, const char *argv[]) {
     config.mFramebuffer = &fbuffer;
 
     // Prints what we are doing
-    std::println("Scene:     {}", config.mScene->mSceneName);
-    std::println("Target:    {} iteration(s)", config.mIterations);
+    std::printf("Scene:     %s\n", config.mScene->mSceneName.c_str());
+    std::printf("Target:    %d iteration(s)\n", config.mIterations);
 
     // Renders the image
-    std::println("Running ...");
+    std::printf("Running ...\n");
     auto time = render(config);
-    std::println("Done in {:.2f} s", time);
+    std::printf("Done in %.2f s\n", time);
 
     // Saves the image
     const std::filesystem::path outputName = config.mOutputName;
-    std::print("Saving to: {} ... ", outputName.string());
+    std::printf("Saving to: %s ... ", outputName.string().c_str());
     const std::string &extension = config.mOutputName.substr(config.mOutputName.length() - 3, 3);
+
     fbuffer.Save(outputName, extension);
 }
