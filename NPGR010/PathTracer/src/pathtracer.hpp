@@ -61,8 +61,6 @@ public:
             if (const AbstractLight *light = mScene.GetLightPtr(i))
                 LoDirect += SampleLight(light, frame, surfacePoint, mat, incomingDirection);
         }
-        if (const AbstractLight* bg = mScene.GetBackground())
-            LoDirect += SampleLight(bg, frame, surfacePoint, mat, incomingDirection);
 
         return LoDirect;
     }

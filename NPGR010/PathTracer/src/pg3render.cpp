@@ -62,7 +62,7 @@ auto render(const Config &aConfig) {
     std::vector<std::unique_ptr<AbstractRenderer>> renderers;
     renderers.reserve(aConfig.mNumThreads);
 
-    for (int i = 0; i < renderers.capacity(); i++) {
+    for (int i = 0; i < static_cast<int>(renderers.capacity()); i++) {
         auto renderer = CreateRenderer(aConfig, aConfig.mBaseSeed + i);
         renderer->mMaxPathLength = aConfig.mMaxPathLength;
         renderer->mMinPathLength = aConfig.mMinPathLength;
