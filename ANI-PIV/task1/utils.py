@@ -1,3 +1,5 @@
+from matplotlib.colors import Normalize, NoNorm
+import cv2
 from pathlib import Path
 import numpy as np
 import cv2 as cv
@@ -7,7 +9,7 @@ import math
 from collections import deque
 
 
-def read_directory_gray(image_dir):
+def read_directory(image_dir):
     if not image_dir.exists():
         raise NotADirectoryError(f"Folder not found: {image_dir}")
 
@@ -18,15 +20,17 @@ def read_directory_gray(image_dir):
         raise RuntimeError(
             f"Error accessing files in folder: {image_dir}") from e
 
-    images = []
+    images_gray = []
+    images_rgb = []
     for image_path in image_files:
         img = iu.load_image(image_path)
         if img is None:
             print(f"Skipping unreadable file: {image_path}")
             continue
+        images_rgb.append(img)
         img = iu.to_gray(img)
-        images.append(img)
-    return images
+        images_gray.append(img)
+    return images_gray, images_rgb
 
 
 def pwr_image(image, gamma):
@@ -161,3 +165,56 @@ def reconstruct(image, kernel_size, iterations):
     recons = image_reconstruct(eroded_img, inverted_image)
     mask = otsu_threshold(inverted_image - recons)
     return recons, mask
+
+
+def plot_images(
+    *imgs, titles=[], channels="bgr", normalize=False, ticks_off=True, title_size=32
+):
+    assert channels.lower() in ["bgr", "rgb", "mono"], (
+        "Possible values for channels are: bgr, rgb or mono!"
+    )
+
+    width_def = 60
+    height_def = 60
+
+    width = math.ceil(math.sqrt(len(imgs)))
+    height = math.ceil(len(imgs) / width)
+
+    height_def = height_def / 5 * width
+    if height_def > 65:
+        height_def = 65
+
+    f = plt.figure(figsize=(width_def, height_def))
+
+    for i, img in enumerate(imgs, 1):
+        ax = f.add_subplot(height, width, i)
+        if ticks_off:
+            ax.axis("off")
+
+        if len(titles) != 0:
+            if len(imgs) != len(titles):
+                print("WARNING titles length is not the same as images length!")
+
+            try:
+                ax.set_title(
+                    str(titles[i - 1]),
+                    fontdict={"fontsize": title_size, "fontweight": 400},
+                )
+            except IndexError:
+                pass
+
+        if channels.lower() == "mono" or img.ndim == 2:
+            if normalize:
+                norm = Normalize()
+            else:
+                norm = NoNorm()
+            ax.imshow(img, cmap=plt.get_cmap("gray"), norm=norm)
+        elif channels.lower() == "rgb":
+            ax.imshow(img)
+        else:
+            ax.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+
+    f.subplots_adjust(left=0, right=1, bottom=0, top=1, wspace=0, hspace=0)
+
+    pad = 0.5 if len(titles) > 0 else 0.0
+    f.tight_layout(pad=pad)
