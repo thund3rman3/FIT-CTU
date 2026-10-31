@@ -49,9 +49,13 @@ public:
             mPixels[i] = mPixels[i] + aOther.mPixels[i];
     }
 
-    void Scale(float aScale) {
-        for (size_t i = 0; i < mPixels.size(); i++)
-            mPixels[i] = mPixels[i] * Vec3f(aScale);
+    void Scale(int iterations) {
+        if (iterations <= 0)
+            return;
+
+        float scale = 1.0f / static_cast<float>(iterations);
+        for (auto & mPixel : mPixels)
+            mPixel = mPixel * Vec3f(scale);
     }
 
     //////////////////////////////////////////////////////////////////////////

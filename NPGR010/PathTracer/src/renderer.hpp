@@ -18,13 +18,11 @@ public:
     virtual ~AbstractRenderer() {
     }
 
-    virtual void RunIteration(int aIteration) = 0;
+    virtual void RunIteration() = 0;
 
     void GetFramebuffer(Framebuffer &oFramebuffer) const {
         oFramebuffer = mFramebuffer;
-
-        if (mIterations > 0)
-            oFramebuffer.Scale(1.0f / mIterations);
+        oFramebuffer.Scale(mIterations);
     }
 
     //! Whether this renderer was used at all

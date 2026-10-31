@@ -65,7 +65,7 @@ public:
         return LoDirect;
     }
 
-    void RunIteration(int iteration) override {
+    void RunIteration() override {
         const int resolutionX = static_cast<int>(mScene.mCamera.mResolution.x);
         const int resolutionY = static_cast<int>(mScene.mCamera.mResolution.y);
 

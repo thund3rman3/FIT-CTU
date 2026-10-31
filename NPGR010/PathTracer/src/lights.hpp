@@ -58,9 +58,11 @@ public:
     std::tuple<Vec3f, Vec3f, float> SamplePointOnLight(const Vec3f &origin, Rng &rng) const override {
         float rnd1 = rng.GetFloat();
         float rnd2 = rng.GetFloat();
-        float b1 = rnd1 + rnd2 > 1.0f ? 1.0f - rnd1 : rnd1;
-        float b2 = rnd1 + rnd2 > 1.0f ? 1.0f - rnd2 : rnd2;
-        Vec3f pointOnLight = p0 + e1 * b1 + e2 * b2;
+        float u = 1.0f - std::sqrt(rnd1);
+        float v = rnd2 * std::sqrt(rnd1);
+        Vec3f pointOnLight = p0 + e1 * u + e2 * v;
+        // second option is to get pt = p0*u + p1*v + p2*w
+        // w = std::sqrt(rnd1) * (1 - rnd2)
 
         float pdf = PDF(origin, pointOnLight);
         Vec3f dirFromLight = origin - pointOnLight;

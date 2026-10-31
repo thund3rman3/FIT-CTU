@@ -48,13 +48,12 @@ void AccumulateFramebuffers(const RenderVec& renderers, Framebuffer& outFramebuf
         usedRenderers++;
     }
 
-    if (usedRenderers > 0) {
-        outFramebuffer.Scale(1.f / usedRenderers);
+    outFramebuffer.Scale(usedRenderers);
     }
 }
 
 // The main rendering function, renders what is in aConfig
-auto render(const Config &aConfig) {
+float render(const Config &aConfig) {
     // Set number of used threads
     omp_set_num_threads(aConfig.mNumThreads);
 
@@ -77,7 +76,7 @@ auto render(const Config &aConfig) {
 #pragma omp parallel for
     for (iter = 0; iter < aConfig.mIterations; iter++) {
         int threadId = omp_get_thread_num();
-        renderers[threadId]->RunIteration(iter);
+        renderers[threadId]->RunIteration();
 
         // Print progress bar
 #pragma omp critical
@@ -93,7 +92,8 @@ auto render(const Config &aConfig) {
     AccumulateFramebuffers(renderers, *aConfig.mFramebuffer);
 
     // in seconds
-    return std::chrono::duration_cast<std::chrono::milliseconds>(endT - startT).count() / 1000.f;
+    long long time = std::chrono::duration_cast<std::chrono::microseconds>(endT - startT).count();
+    return static_cast<float>(time) / 1000.f;
 }
 
 //////////////////////////////////////////////////////////////////////////
