@@ -31,10 +31,10 @@ Pro trénování byl vytvořen vlastní Dataset postavený na PyTorch.
 Použitá síť implementuje plně konvoluční architekturu **U-Net** s enkodérem, dekodérem a skip connections, upravenou pro rychlou konvergenci na obrázcích velikosti $256 \times 256$ .
 
 ### 2.1 DoubleConv
-Základním stavebním kamenem sítě je blok složený ze dvou konvolučních vrstev:
-$$\text{Conv2D}(k \times k, \text{pad}=\lfloor k/2 \rfloor) \rightarrow \text{BatchNorm2D} \rightarrow \text{ReLU} \rightarrow \text{Conv2D}(k \times k, \text{pad}=\lfloor k/2 \rfloor) \rightarrow \text{BatchNorm2D} \rightarrow \text{ReLU}$$
+Základním stavebním kamenem sítě je blok složený ze dvou konvolučních vrstev, kde každá je:
+$$\text{Conv2D}(k \times k, \text{pad}=\lfloor k/2 \rfloor) \rightarrow \text{BatchNorm2D} \rightarrow \text{ReLU}$$
 * **Padding:** Hodnota $\lfloor k/2 \rfloor$ (pro jádro $3 \times 3$ padding = 1) zachovává prostorové rozměry příznakových map uvnitř bloku.
-* **Batch Normalization:** Stabilizuje distribuci aktivací napříč vrstvami, zrychluje trénink a působí jako mírná regularizace.
+* **Batch Normalization:** Stabilizuje distribuci aktivací napříč vrstvami, zrychluje trénink.
 
 ### 2.2 Architektura (default depth = 3)
 1. **Enkodér (Downsampling):**
@@ -47,7 +47,7 @@ $$\text{Conv2D}(k \times k, \text{pad}=\lfloor k/2 \rfloor) \rightarrow \text{Ba
    * **Bottleneck:** 128 kanálů $\rightarrow$ 256 kanálů, rozlišení $32 \times 32$.
 2. **Dekodér (Upsampling) a Skip Connections:**
    * **Zvětšení rozlišení:** Realizováno pomocí bilineárního převzorkování `nn.Upsample(scale_factor=2, mode='bilinear')`.
-   * **Skip Connections (`torch.cat`):** Příznakové mapy z odpovídající úrovně enkodéru se zřetězí s převzorkovaným výstupem dekodéru podél dimenze kanálů, čímž se do dekodéru vrací jemná prostorová informace o tenkých vláknech ztracená při poolingu.
+   * **Skip Connections (`torch.cat`):** Příznakové mapy z odpovídající úrovně enkodéru se zřetězí s převzorkovaným výstupem dekodéru podél dimenze kanálů, čímž se do dekodéru vrací jemná prostorová informace o tenkých mikrotubulech ztracená při poolingu.
    * **1. dekódovací úroveň (`dec2`):** Spojení $256 + 128 = 384$ kanálů $\rightarrow$ redukce na 128 kanálů.
    * **2. dekódovací úroveň (`dec1`):** Spojení $128 + 64 = 192$ kanálů $\rightarrow$ redukce na 64 kanálů.
    * **3. dekódovací úroveň (`dec0`):** Spojení $64 + 32 = 96$ kanálů $\rightarrow$ redukce na 32 kanálů při původním rozlišení $256 \times 256$.
@@ -75,13 +75,13 @@ $$\text{Conv2D}(k \times k, \text{pad}=\lfloor k/2 \rfloor) \rightarrow \text{Ba
 | **Tversky Loss ($\alpha=0.7, \beta=0.3$)** | 0.2224 | 0.2057 | 0.7478 | 0.9586 | 0.6042 | **0.9887** | 0.7496 |
 
 ### 3.3 Analýza a výběr ztrátové funkce
-* **BCE:** Dosáhla celkově nejvyššího **Dice skóre (0.8092)** i **F1-skóre (0.8127)**. Poskytuje nejvyváženější poměr mezi Precision (75.11 %) a Recall (88.68 %). Plynulý gradient binární křížové entropie vedl k nejstabilnější konvergenci bez oscilací. Byla proto zvolena jako **hlavní referenční funkce pro další ladění**.
+* **BCE:** Dosáhla celkově nejvyššího **Dice skóre (0.8092)** i **F1-skóre (0.8127)**. Poskytuje nejvyváženější poměr mezi Precision (75.11 %) a Recall (88.68 %). Plynulý gradient BCE vedl k nejstabilnější konvergenci bez oscilací. Byla proto zvolena jako **hlavní referenční funkce pro další ladění**.
 
 ![](/IMGS2/BCE/D4g3.png)
 
 ![](/IMGS2/BCE/D4epochs.png)
 
-* **BCE + Dice:** Přinesla vysoký Recall (94.81 %) i Dice (0.8040), avšak s mírným nárůstem false-positive pixelů na okrajích vláken (Precision klesla na 70.19 %).
+* **BCE + Dice:** Přinesla vysoký Recall (94.81 %) i Dice (0.8040), avšak s mírným nárůstem false-positive pixelů na okrajích mikrotubulů (Precision klesla na 70.19 %).
 ![](/IMGS2/BCE+Dice/g3.png)
 ![](/IMGS2/BCE+Dice/epochs2.png)
 
@@ -96,7 +96,7 @@ $$\text{Conv2D}(k \times k, \text{pad}=\lfloor k/2 \rfloor) \rightarrow \text{Ba
 ![](/IMGS2/focalLoss/epoch2.png)
 
 
-Přenastavením vah na $\alpha=0.70$ a $\gamma=1.0$ došlo k dramatickému nárůstu Recallu na 91.71 % a Dice na 0.8037, což potvrdilo klíčový vliv váhy tříd u tenkých struktur.
+   - Přenastavením vah na $\alpha=0.70$ a $\gamma=1.0$ došlo k dramatickému nárůstu Recallu na 91.71 % a Dice na 0.8037, což potvrdilo klíčový vliv váhy tříd u tenkých struktur.
 
 
 * **Tversky Loss:** Zvýšením váhy pro False Negatives ($\alpha=0.7$) dosáhla extrémního Recallu (98.87 %), avšak za cenu silného šumu v pozadí (Precision pouze 60.42 %).
@@ -110,8 +110,8 @@ Přenastavením vah na $\alpha=0.70$ a $\gamma=1.0$ došlo k dramatickému nár�
 ### 4.1 Kvalitativní vyhodnocení
 * **Vývoj predikcí v čase:** V 1. epoše model predikuje celou plochu jako pozadí (Dice = 0.0000). Již ve 2. epoše síť lokalizuje hlavní tubuly a od 4. epochy jsou predikované kontury hladké a věrně kopírují ground truth.
 * **Typické chybové stavy (Failure Cases):**
-  1. **Falešná pozitiva (FP):** Model občas detekuje membrány, nebo fázový šum na pozadí, které mají v mikroskopu podobný jasový kontrast jako mikrotubuly. V okolí silných vláken dochází k mírnému "rozpíjení" masky.
-  2. **Falešná negativa (FN):** Přerušená nebo nedetekovaná velmi tenká, nízko-kontrastní vlákna a koncové výběžky řasinek.
+  1. **Falešná pozitiva (FP):** Model občas detekuje membrány, nebo fázový šum na pozadí, které mají v mikroskopu podobný jasový kontrast jako mikrotubuly. V okolí výraznějších mikrotubulů dochází k mírnému "rozpíjení" masky.
+  2. **Falešná negativa (FN):** Přerušené nebo nedetekované velmi tenké, nízko-kontrastní mikrotubuly a koncové výběžky cilií.
 * **Důvody chyb:**
   * Buňky obsahují šum a nerovnoměrné nasvícení.
   * Chybovost ground truth segmentacních masek
@@ -131,7 +131,7 @@ Na celé validační sadě (71 snímků o rozměru $256 \times 256$ px, celkem *
 | **F1-Score** | **0.8151** | — |
 | **Dice Coefficient** | **0.8151** | — |
 
-* **Nevhodnost metriky Accuracy:** Pozadí tvoří **93.74 %** všech pixelů v datasetu, zatímco mikrotubuly pouze **6.26 %**. Triviální klasifikátor predikující samé nuly dosahuje Accuracy 93.73 % při Dice = 0. Klíčovými metrikami jsou proto **Dice score** a **F1-score**, které měří skutečný prostorový překryv zájmových vláken.
+* **Nevhodnost metriky Accuracy:** Pozadí tvoří **93.74 %** všech pixelů v datasetu, zatímco mikrotubuly pouze **6.26 %**. Triviální klasifikátor predikující samé nuly dosahuje Accuracy 93.73 % při Dice = 0. Klíčovými metrikami jsou proto **Dice score** a **F1-score**, které měří skutečný překryv segmentovaných mikrotubulů.
 * **Konfuzní matice:** 
 ![](/IMGS2/BCE/confusion_matrix.png)
 
@@ -146,19 +146,19 @@ Experimenty byly provedeny s nejlépe fungující ztrátovou funkcí **BCE** za 
 
 | Hloubka sítě | Parametry / Úrovně | Val Loss (10. ep.) | Dice Score | Accuracy | Precision | Recall | F1-Score |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Hloubka 2 (mělčí)** | 2 úrovně ($256 \rightarrow 128$) | 0.1206 | 0.7154 | 0.9496 | 0.5615 | **0.9860** | 0.7138 |
-| **Hloubka 3 (baseline)** | 3 úrovně ($256 \rightarrow 128 \rightarrow 64$) | **0.0728** | **0.8092** | 0.9744 | 0.7511 | 0.8868 | **0.8127** |
-| **Hloubka 4 (hlubší)** | 4 úrovně ($256 \rightarrow 128 \rightarrow 64 \rightarrow 32$) | 0.0696 | 0.7727 | **0.9765** | **0.9162** | 0.6849 | 0.7832 |
+| **2** | $256 \rightarrow 128$ | 0.1206 | 0.7154 | 0.9496 | 0.5615 | **0.9860** | 0.7138 |
+| **3** | $256 \rightarrow 128 \rightarrow 64$ | **0.0728** | **0.8092** | 0.9744 | 0.7511 | 0.8868 | **0.8127** |
+| **4** | $256 \rightarrow 128 \rightarrow 64 \rightarrow 32$ | 0.0696 | 0.7727 | **0.9765** | **0.9162** | 0.6849 | 0.7832 |
 
 #### Analýza vlivu hloubky:
 1. **Příliš mělká síť (Hloubka 2):**
    * Síť nemá dostatečný globální kontext buňky k odlišení pozadí od shluků mikrotubulů.
-   * Důsledkem je extrémně nízká **Precision (56.15 %)** a nestabilita v tréninku (např. v 9. epoše došlo k propadu Dice na 0.2401). Síť sice detekuje téměř všechna vlákna (Recall 98.60 %), ale za cenu masivního množství falešně pozitivních pixelů na pozadí.
+   * Důsledkem je extrémně nízká **Precision (56.15 %)** a nestabilita v tréninku (např. v 9. epoše došlo k propadu Dice na 0.2401). Síť sice detekuje téměř všechny mikrotubuly (Recall 98.60 %), ale za cenu masivního množství falešně pozitivních pixelů na pozadí.
 2. **Příliš hluboká síť (Hloubka 4):**
    * Čtyřnásobný pooling zmenšuje prostorové rozlišení v bottlenecku až na $16 \times 16$ px. Pro jemné jednopixelové mikrotubuly to znamená nevratnou ztrátu prostorové lokalizace.
-   * Model má vzhledem k malému trénovacímu datasetu (281 snímků) příliš mnoho parametrů. Síť začne být příliš konzervativní – dosahuje výborné **Precision (91.62 %)**, ale dramaticky jí klesá **Recall (68.49 %)** a celkové **Dice skóre (0.7727)**, protože tenká a méně kontrastní vlákna zcela vynechává.
+   * Model má vzhledem k malému trénovacímu datasetu (281 snímků) příliš mnoho parametrů. Síť začne být příliš konzervativní – dosahuje výborné **Precision (91.62 %)**, ale dramaticky jí klesá **Recall (68.49 %)** a celkové **Dice skóre (0.7727)**, protože tenké a méně kontrastní mikrotubuly zcela vynechává.
 3. **Která hloubka fungovala nejlépe a proč:**
-   * Nejlépe fungovala **Hloubka 3**. Představuje optimální kompromis: receptivní pole je dostatečně velké pro zachycení celého kontextu buňky, zmenšení na $32 \times 32$ px v bottlenecku ještě nemaže prostorovou strukturu vláken a kapacita modelu odpovídá velikosti trénovacího datasetu bez sklonu k přetrénování.
+   * Nejlépe fungovala **hloubka 3**. Představuje optimální kompromis: receptivní pole je dostatečně velké pro zachycení celého kontextu buňky, zmenšení na $32 \times 32$ px v bottlenecku ještě nemaže prostorovou strukturu mikrotubulů a kapacita modelu odpovídá velikosti trénovacího datasetu bez sklonu k přetrénování.
 
 ---
 
@@ -172,15 +172,15 @@ Experimenty byly provedeny s nejlépe fungující ztrátovou funkcí **BCE** za 
 
 #### Analýza velikosti jádra:
 1. **Jádro $1 \times 1$:** Konvoluce neintegruje žádné prostorové okolí pixelu a funguje pouze jako lineární projekce kanálů. Jediné prostorové sdružování probíhá přes pooling. Pro segmentaci spojitých prostorových křivek je toto jádro nedostačující (Dice 0.7555, Recall 74.50 %).
-2. **Jádro $3 \times 3$:** Standardní a výpočetně efektivní velikost. Zachycuje lokální gradienty a orientaci vláken, dosahuje vyváženého poměru Precision i Recallu (Dice 0.8092).
+2. **Jádro $3 \times 3$:** Standardní a výpočetně efektivní velikost. Zachycuje lokální gradienty a orientaci mikrotubulů, dosahuje vyváženého poměru Precision i Recallu (Dice 0.8092).
 3. **Jádro $5 \times 5$:** Větší receptivní pole v každé konvoluci lépe navazuje sousední segmenty tenkých mikrotubulů přes větší vzdálenost. Dosáhlo nejvyššího **Dice skóre (0.8357)** i nejnižší validační ztráty (**0.0626**), vyžaduje však vyšší výpočetní nároky.
 
 ---
 
-## 6. Souhrnný závěr
+## 6. Závěr
 
 1. **Dataset a metrika:** Vzhledem k nerovnováze tříd (93.74 % pozadí vs. 6.26 % mikrotubulů) je metrika Accuracy zavádějící. Hlavními hodnotícími ukazateli jsou **Dice koeficient** a **F1-skóre**.
-2. **Ztrátová funkce:** Nejvyváženější výsledky poskytla **Binary Cross-Entropy (`BCEWithLogitsLoss`)** s Dice 0.8092 a F1 0.8127. U Focal Loss bylo nutné výrazně zvýšit váhu pozitivní třídy ($\alpha=0.7$), jinak síť ignorovala tenká vlákna.
+2. **Ztrátová funkce:** Nejvyváženější výsledky poskytla **Binary Cross-Entropy (`BCEWithLogitsLoss`)** s Dice 0.8092 a F1 0.8127. U Focal Loss bylo nutné výrazně zvýšit váhu pozitivní třídy ($\alpha=0.7$), jinak síť ignorovala tenké mikrotubuly.
 3. **Architektura U-Net:**
-   * **Hloubka 3** se ukázala jako ideální volba pro rozlišení $256 \times 256$ a danou velikost datasetu. Mělčí síť (hloubka 2) trpí nedostatečným kontextem a šumem, hlubší síť (hloubka 4) ztrácí prostorové rozlišení vláken v bottlenecku.
-   * Zvětšení jádra z **$3 \times 3$ na $5 \times 5$** přineslo další znatelné zlepšení Dice skóre na **0.8357**, protože větší konvoluční okno lépe sleduje návaznost podlouhlých biologických struktur.
+   * **Hloubka 3** se ukázala jako ideální volba pro rozlišení $256 \times 256$ a danou velikost datasetu. Mělčí síť (hloubka 2) trpí nedostatečným kontextem a šumem, hlubší síť (hloubka 4) ztrácí prostorové rozlišení mikrotubulů v bottlenecku.
+   * Zvětšení jádra z **$3 \times 3$ na $5 \times 5$** přineslo další znatelné zlepšení Dice skóre na **0.8357**, protože větší konvoluční okno lépe sleduje návaznost podlouhlých biologických struktur mikrotubulů.
