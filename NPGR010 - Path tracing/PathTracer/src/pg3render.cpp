@@ -49,7 +49,6 @@ void AccumulateFramebuffers(const RenderVec& renderers, Framebuffer& outFramebuf
     }
 
     outFramebuffer.Scale(usedRenderers);
-    }
 }
 
 // The main rendering function, renders what is in aConfig
