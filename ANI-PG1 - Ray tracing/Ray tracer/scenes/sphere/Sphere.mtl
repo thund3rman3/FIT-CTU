@@ -20,6 +20,7 @@ newmtl leftSphere
     illum 5
     # map_Kd scenes/brick_diffuse.png
     # norm scenes/brick_normal.png
+    map_Kd scenes/UTIA_BRDF_PG14_bin/m089_fabric126.bin
 
 
 
@@ -33,6 +34,7 @@ newmtl rightSphere
     illum 7
     #map_Kd scenes/brick_diffuse.png
     #norm scenes/brick_normal.png
+    map_Kd scenes/UTIA_BRDF_PG14_bin/m127_plastic02.bin
 
 
 newmtl floor
@@ -42,6 +44,7 @@ newmtl floor
     Ka 0.7250 0.7100 0.6800
     Kd 0.7250 0.7100 0.6800
 	Ks 0 0 0
+    map_Kd scenes/UTIA_BRDF_PG14_bin/m054_fabric077.bin
 
 newmtl ceiling
     Ns 10.0000
@@ -59,8 +62,9 @@ newmtl backWall
 	Kd 0.7250 0.7100 0.6800
 	Ks 0 0 0
     # Ks 0.5 0.5 0.5
-    map_Kd scenes/brick_diffuse.png
-    norm scenes/brick_normal.png
+    map_Kd scenes/UTIA_BRDF_PG14_bin/m071_fabric106.bin
+    #map_Kd scenes/brick_diffuse.png
+    #norm scenes/brick_normal.png
 
 
 newmtl rightWall
@@ -70,6 +74,7 @@ newmtl rightWall
     Kd 0.161 0.133 0.427
 	# Ks 0 0 0
     Ks 0.5 0.5 0.5
+    map_Kd scenes/UTIA_BRDF_PG14_bin/m136_wood02.bin
 
 newmtl leftWall
 	Ns 10.0000

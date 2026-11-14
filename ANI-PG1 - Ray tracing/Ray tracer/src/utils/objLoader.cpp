@@ -1,4 +1,5 @@
 #include "objLoader.h"
+#include <filesystem>
 
 sObjLoader::sObjLoader(){
 
@@ -164,8 +165,12 @@ void sObjLoader::readMaterials(const std::vector<tinyobj::material_t>& materials
                                     m.shininess, m.ior);
 
         if (!m.diffuse_texname.empty()) { 
-            std::cout << "Loading texture: " << m.diffuse_texname << std::endl; 
-            _sceneMaterials.back()._albedoTex = std::make_shared<cTexture>(m.diffuse_texname);                        
+            std::cout << "Loading texture: " << m.diffuse_texname << std::endl;
+            if(m.diffuse_texname.ends_with(".bin")){
+                _sceneMaterials.back()._brdf = BRDF(m.diffuse_texname);
+            } 
+            else
+                _sceneMaterials.back()._albedoTex = std::make_shared<cTexture>(m.diffuse_texname);                        
         }
             
         if (!m.normal_texname.empty()) { 

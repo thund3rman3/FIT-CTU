@@ -46,7 +46,8 @@ vec3 cRenderer::traceRay(const sRay& ray, uint32_t depth, bool cullback){
     vec3 n; // Normal at hit point to interpolate lighting
     vec3 uv; // UV coordinates at hit point p for texture mapping
     float texScale;
-    findIntersection(p, n, ray, uv, hitMat, cullback, texScale);
+    vec3 tangent;
+    findIntersection(p, n, ray, uv, hitMat, cullback, texScale, tangent);
 
     if(hitMat == -1)
         return vec3();
@@ -56,16 +57,16 @@ vec3 cRenderer::traceRay(const sRay& ray, uint32_t depth, bool cullback){
     if (c.x > 0.0f || c.y > 0.0f || c.z > 0.0f)
         return c; // color of light
     
-    vec3 v = (-ray._dir).normalize();  // direction from hit point P to origin
+    vec3 v = (-ray._dir).normalize();  // direction from hit point P to origin / camera
 
     if(cullback)
-        c += areaLightEvalBRDF(p, n, v, uv, hitMat, texScale,cullback);
+        c += areaLightEvalBRDF(p, n, v, uv, hitMat, texScale,cullback, tangent);
 
     //return c;
     return castSecondaryRays(c, n, ray._dir, p, hitMat, depth, cullback);
 }
 
-vec3 cRenderer::areaLightEvalBRDF(const vec3& p, const vec3& n, const vec3& v, const vec3& uv, const int hitMat , float texScale, bool cullback){
+vec3 cRenderer::areaLightEvalBRDF(const vec3& p, const vec3& n, const vec3& v, const vec3& uv, const int hitMat , float texScale, bool cullback, const vec3& tangent){
         
     static std::mt19937 gen(std::random_device{}());
     static std::uniform_real_distribution<float> rnd(0.0f, 1.0f);
@@ -87,44 +88,61 @@ vec3 cRenderer::areaLightEvalBRDF(const vec3& p, const vec3& n, const vec3& v, c
             vec3 p_l = a + (b - a) * b1 + (c - a) * b2;
             vec3 dirPL = p_l - p; // direction p - light
 
-            tmp += castShadowRaysEvalBRDF(litTri, dirPL, p, n, v, uv, hitMat, texScale, cullback); 
+            tmp += castShadowRaysEvalBRDF(litTri, dirPL, p, n, v, uv, hitMat, texScale, cullback, tangent); 
         }
         res += tmp * litTri._triArea / static_cast<float>(cfg.LIGHT_SAMPLES);
     }
     return res;
 }
 
-vec3 cRenderer::castShadowRaysEvalBRDF(const sTriangleLight& litTri, const vec3& dirPL,const vec3& p, const vec3& n, const vec3& v, const vec3& uv, const int hitMat, float texScale, bool cullback){
+vec3 toLocal(const vec3& w, const vec3& t, const vec3& b, const vec3& n) {
+      return vec3(dot(w, t), dot(w, b), dot(w, n));
+    }
+
+vec3 cRenderer::castShadowRaysEvalBRDF(const sTriangleLight& litTri, const vec3& dirPL,const vec3& p, const vec3& n, const vec3& v, const vec3& uv, const int hitMat, float texScale, bool cullback, const vec3& tangent){
 
     float dstPL = dirPL.length(); // dist p - light
     vec3 dirNormalizedPL = dirPL / dstPL; // dir p - light normalized
     sRay shadowRay(p + n * gEpsilon, dirNormalizedPL);
     ++logger._cntShad;
-    vec3 tmp;
-
+    
     auto start = std::chrono::steady_clock::now();
-
+    
     sHitInfo hitInfo = _kdTree.traverse(shadowRay, cullback, true, dstPL - lEpsilon);
-
+    
     bool inShadow = hitInfo.isHit();
-
+    
     logger.logRayIntersection(start, false);
-
+    
+    vec3 color;
     if(!inShadow) {
-        vec3 r_d = _loader->_sceneMaterials[hitMat]._diffuse;
-        cTexture* albedoTex = _loader->_sceneMaterials[hitMat]._albedoTex.get();
-        if(albedoTex != nullptr){
-            float dstCP = (p - camera._pos).length();
-            r_d = albedoTex->sampleTrilinearUV(uv.x, uv.y, dstCP, texScale);
+        vec3 brdfVal;
+        if(_loader->_sceneMaterials[hitMat]._brdf.isLoaded()){
+            // // Gram-Schmidt reorthogonalization to ensure an orthonormal TBN frame
+            vec3 t = (tangent - n * dot(n, tangent)).normalize();
+            vec3 b = cross(n, t).normalize();
+
+            vec3 viewDirLocal = toLocal(v, t, b, n).normalize();
+            vec3 lightDirLocal = toLocal(dirNormalizedPL, t, b, n).normalize();
+            brdfVal = _loader->_sceneMaterials[hitMat]._brdf.lookupBrdfVal(lightDirLocal, viewDirLocal);
+        }
+        else{
+            vec3 r_d = _loader->_sceneMaterials[hitMat]._diffuse;
+            cTexture* albedoTex = _loader->_sceneMaterials[hitMat]._albedoTex.get();
+            if(albedoTex != nullptr){
+                float dstCP = (p - camera._pos).length();
+                r_d = albedoTex->sampleTrilinearUV(uv.x, uv.y, dstCP, texScale);
+            }
+
+            brdfVal = cfg.GGX ? GGX(n, v, dirNormalizedPL, r_d, hitMat) : Phong(n, v, dirNormalizedPL, r_d, hitMat);
         }
 
-        vec3 color = cfg.GGX ? GGX(n, v, dirNormalizedPL, r_d, hitMat) : Phong(n, v, dirNormalizedPL, r_d, hitMat);
-        float denom = dstPL *dstPL;
+        float denom = dstPL * dstPL;
         float num = std::max(0.0f, dot(n, dirNormalizedPL)) * std::max(0.0f, dot(litTri._faceNormal, -dirNormalizedPL));
-        tmp += color * litTri._emission * num / denom;
+        color = brdfVal * litTri._emission * num / denom;
     }
 
-    return tmp;
+    return color;
 }
 
 vec3 cRenderer::Phong(const vec3& n, const vec3& v, const vec3& d_l, const vec3& r_d, const int hitMat){
@@ -219,8 +237,8 @@ vec3 cRenderer::castSecondaryRays(const vec3& c, vec3& n, const vec3& rayDir, co
     vec3 cr, ct;
     vec3 transmit = _loader->_sceneMaterials[hitMat]._transmittance;
     vec3 specular = _loader->_sceneMaterials[hitMat]._specular;
-    bool transmits = (transmit.x > 0.0f || transmit.y > 0.0f || transmit.z > 0.0f);
-    bool reflects = (specular.x > 0.0f || specular.y > 0.0f || specular.z > 0.0f);
+    bool transmits = (transmit.x > 0.0f || transmit.y > 0.0f || transmit.z > 0.0f) && !_loader->_sceneMaterials[hitMat]._brdf.isLoaded();
+    bool reflects = (specular.x > 0.0f || specular.y > 0.0f || specular.z > 0.0f) && !_loader->_sceneMaterials[hitMat]._brdf.isLoaded();
 
     if(depth >= cfg.REC_DEPTH_MAX || (!transmits && !reflects))
         return c;
@@ -250,7 +268,7 @@ std::pair<float, float> cRenderer::calcFresnelParts(const float dotNV, const flo
     return {F0, dotNVi5};
 }
 
-void cRenderer::findIntersection(vec3& p, vec3& n, const sRay& ray, vec3& uvHit, int& hitMat, bool cullback, float& texScale){
+void cRenderer::findIntersection(vec3& p, vec3& n, const sRay& ray, vec3& uvHit, int& hitMat, bool cullback, float& texScale, vec3& t){
     auto start = std::chrono::steady_clock::now();
     sHitInfo hitInfo = _kdTree.traverse(ray, cullback);
 
@@ -271,9 +289,9 @@ void cRenderer::findIntersection(vec3& p, vec3& n, const sRay& ray, vec3& uvHit,
 
     n = hitInfo._hitTri->_normals[0] * B0 + hitInfo._hitTri->_normals[1] * hitInfo._b1 + hitInfo._hitTri->_normals[2] * hitInfo._b2; // Interpolate normal using barycentric coordinates
     n = n.normalize();
-    vec3 t = hitInfo._hitTri->_tangents[0] * B0 + hitInfo._hitTri->_tangents[1] * hitInfo._b1 + hitInfo._hitTri->_tangents[2] * hitInfo._b2; // Interpolate tangent
+    t = hitInfo._hitTri->_tangents[0] * B0 + hitInfo._hitTri->_tangents[1] * hitInfo._b1 + hitInfo._hitTri->_tangents[2] * hitInfo._b2; // Interpolate tangent
     t = t.normalize();
-    
+
     n = transformNormal(n, t, uvHit, hitMat);
 }
 

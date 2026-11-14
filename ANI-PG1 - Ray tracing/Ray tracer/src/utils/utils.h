@@ -20,6 +20,7 @@
 #include "../core/ray.h"
 #include "../core/triangle.h"
 #include "cfgLoader.h"
+#include "../scene/TBRDF.h"
 
 /**
  * @brief Print a progress message at key scanline milestones.

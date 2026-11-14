@@ -10,10 +10,12 @@
 
 #include "texture.h"
 #include "../math/vec3.h"
+#include "TBRDF.h"
 
 struct sMaterial {
     std::shared_ptr<cTexture> _albedoTex; // Diffuse map
     std::shared_ptr<cTexture> _normalTex; // Normal map
+    BRDF _brdf; // BRDF data for complex materials
 
     //vec3 ambient; // Ia - Ignored in this implementation
     vec3 _diffuse; // r_d
@@ -34,6 +36,7 @@ struct sMaterial {
                 float ior) 
         : _albedoTex(nullptr), 
           _normalTex(nullptr),
+          _brdf(),
           _diffuse(diffuse), 
           _specular(specular), 
           _transmittance(transmittance),

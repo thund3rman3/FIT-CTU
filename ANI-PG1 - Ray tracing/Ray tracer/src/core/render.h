@@ -75,9 +75,10 @@ private:
      * @param hitMat Material index of hit surface.
      * @param texScale Texture scale factor.
      * @param cullback Enable backface culling.
+     * @param tangent Tangent vector for texture mapping.
      * @return Shaded color contribution from the area light.
      */
-    vec3 areaLightEvalBRDF(const vec3& p, const vec3& n, const vec3& v, const vec3& uv, const int hitMat , float texScale, bool cullback);
+    vec3 areaLightEvalBRDF(const vec3& p, const vec3& n, const vec3& v, const vec3& uv, const int hitMat , float texScale, bool cullback, const vec3& tangent);
 
     /**
      * @brief Cast shadow rays toward an emitting triangle and accumulate shading.
@@ -91,9 +92,10 @@ private:
      * @param hitMat Material index of hit surface.
      * @param texScale Texture scale factor.
      * @param cullback Enable backface culling.
+     * @param tangent Tangent vector for texture mapping.
      * @return Shadowed color contribution.
      */
-    vec3 castShadowRaysEvalBRDF(const sTriangleLight& litTri, const vec3& dirPL,const vec3& p, const vec3& n, const vec3& v, const vec3& uv, const int hitMat, float texScale, bool cullback);
+    vec3 castShadowRaysEvalBRDF(const sTriangleLight& litTri, const vec3& dirPL,const vec3& p, const vec3& n, const vec3& v, const vec3& uv, const int hitMat, float texScale, bool cullback, const vec3& tangent);
 
     /**
      * @brief Evaluate Phong BRDF for a surface point.
@@ -183,8 +185,9 @@ private:
      * @param hitMat Output material index.
      * @param cullback Enable backface culling.
      * @param texScale Output texture scaling factor.
+     * @param t Output tangent vector.
      */
-    void findIntersection(vec3& p, vec3& n, const sRay& ray, vec3& uvHit, int& hitMat, bool cullback, float& texScale);
+    void findIntersection(vec3& p, vec3& n, const sRay& ray, vec3& uvHit, int& hitMat, bool cullback, float& texScale, vec3& t);
 
     /**
      * @brief Interpolate UV coordinates across a triangle.

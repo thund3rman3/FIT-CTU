@@ -2,7 +2,7 @@ CXX      = g++
 LD       = g++
 
 # Tvoje požadované flagy včetně -O2 pro obrovské zrychlení Ray Traceru
-CXXFLAGS = -std=c++20 -Wall -pedantic -O2 -g -Isrc -Iexternal
+CXXFLAGS = -std=c++23 -Wall -pedantic -O2 -g -Isrc -Iexternal
 
 OUT      = raytracer
 
