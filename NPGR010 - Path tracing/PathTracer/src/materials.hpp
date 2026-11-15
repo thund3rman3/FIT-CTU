@@ -18,40 +18,48 @@ public:
         mPhongExponent = 1.f;
     }
 
-    /**
-     * Randomly chooses an outgoing direction reflected from the material surface
-     * Arguments:
-     *  - incomingDirection = a normalized direction towards the previous (origin) point in the scene
-     *  - rng = random generator
-     * Returns:
-     *  - a randomly sampled reflected outgoing direction
-     *  - the intensity corresponding to the reflected light
-     *  - the probability density (PDF) of choosing this direction
-     */
-    std::tuple<Vec3f, Vec3f, float> SampleReflectedDirection(const Vec3f &incomingDirection, Rng &rng) const {
+    std::tuple<Vec3f, Vec3f, float> SampleImportanceBrdf(const Vec3f &incomingDirection, Rng &rng) const {
+        float probDiffuse  = mDiffuseReflectance.Max();
+        float probSpecular = mPhongReflectance.Max();
+        float normalization = 1.f / (probDiffuse + probSpecular);
+
+        // probability of choosing the diffuse component
+        probDiffuse *= normalization;
+        // probability of choosing the specular component
+        probSpecular *= normalization;
+
+        Vec3f generatedDir;
+        if (rng.GetFloat() <= probDiffuse)
+            generatedDir = SampleDiffuse(incomingDirection, rng);
+        else
+            generatedDir = SampleSpecular(incomingDirection, rng);
+
+        float pdf = EvalPdf(incomingDirection, generatedDir, probDiffuse, probSpecular);
+        return {generatedDir, EvaluateBRDF(incomingDirection, generatedDir), pdf};
+    }
+
+    Vec3f SampleDiffuse(const Vec3f &incomingDirection, Rng &rng) const {
         // Hemispherical sampling proportional to cos(theta)
 
-        // Azimuth angle around Z-Up-Axis from <0;2PI)
         float phi = 2.0f * PI_F * rng.GetFloat();
-
-        /** Unit sphere -> radius=1 -> maxHeight = 1 = cos(Theta)
-        Theta is angle between normal and outgoing direction
-        Random height from surface on the sphere is 1 - <0;1) = <0;1) cos(theta)
-        float cosThetaUniform = 1.0f - rnd2
-        Not to use uniform sampling, use sqrt to change sample probablity (pdf)
-        Get more points as we get closer to the normal (increasing cosine)
-        sqrt() - 0.01->0.1, 0.25->0.5, 0.5->0.71 */
         float rnd2 = rng.GetFloat();
         float cosTheta = std::sqrt(1.0f - rnd2); // sample height
-
-        // Horizontal radius in height cosTheta, gotten from Pyhagoras:
-        // r^2+cos^2Theta = 1; r = sqrt(1-(1-rnd2))
         float r = std::sqrt(rnd2);
-        Vec3f outDir(r * std::cos(phi), r * std::sin(phi), cosTheta);
+        return Vec3f(r * std::cos(phi), r * std::sin(phi), cosTheta);
+    }
 
-        Vec3f intensity = EvaluateBRDF(incomingDirection, outDir);
-        float pdf = PDF(incomingDirection, outDir);
-        return {outDir, intensity, pdf};
+    Vec3f SampleSpecular(const Vec3f &incomingDirection, Rng &rng) const {
+        const Vec3f idealReflection(-incomingDirection.x, -incomingDirection.y, incomingDirection.z);
+        CoordinateFrame lobeFrame;
+        lobeFrame.SetFromZ(idealReflection);
+
+        float phi = 2.0f * PI_F * rng.GetFloat();
+        float rnd2 = rng.GetFloat();
+        float exp = 1.0f / (mPhongExponent + 1.0f);
+        float cosTheta = std::pow(rnd2, exp); // sample height
+        float r = std::sqrt(1.0f - std::pow(rnd2, 2.0f * exp));
+        Vec3f dirInLobeFrame(r * std::cos(phi), r * std::sin(phi), cosTheta);
+        return lobeFrame.ToWorld(dirInLobeFrame);
     }
 
     /**
@@ -61,11 +69,21 @@ public:
      *  - incomingDirection = a normalized direction towards the previous (origin) point in the scene
      *  - outgoingDirection = the randomly sampled (normalized) outgoing direction
      */
-    float PDF(const Vec3f &incomingDirection, const Vec3f &outgoingDirection) const {
-        if (outgoingDirection.z <= 0.0f)
-            return 0.0f;
+    float getSpecularPdf(const Vec3f &incomingDirection, const Vec3f &outgoingDirection) const {
+        float Refl_ExpNormalized = (mPhongExponent + 1) * 0.5f * INV_PI_F;
+        Vec3f idealReflection(-incomingDirection.x, -incomingDirection.y, incomingDirection.z);
+        float cosTheta = std::max(0.0f, Dot(idealReflection, outgoingDirection));
+        return Refl_ExpNormalized * std::pow(cosTheta, mPhongExponent);
+    }
 
+    float getDiffusePdf(const Vec3f &outgoingDirection) const {
         return outgoingDirection.z * INV_PI_F;
+    }
+
+    float EvalPdf(const Vec3f& incomingDirection, const Vec3f& generatedDir, float probDiffuse, float probSpecular) const {
+        if (generatedDir.z <= 0.0f)
+            return 0.0f;
+        return probDiffuse * getDiffusePdf(generatedDir) + probSpecular * getSpecularPdf(incomingDirection, generatedDir);
     }
 
     /**
@@ -85,11 +103,11 @@ public:
 
         Vec3f idealReflection(-incomingDirection.x, -incomingDirection.y, incomingDirection.z);
 
-        float cosAlpha = Dot(idealReflection, outgoingDirection);
-        cosAlpha = std::max(0.0f, cosAlpha);
+        float cosTheta = Dot(idealReflection, outgoingDirection);
+        cosTheta = std::max(0.0f, cosTheta);
 
         Vec3f Refl_ExpNormalized = mPhongReflectance * (mPhongExponent + 2.0f) / (2.0f * PI_F);
-        Vec3f glossyComponent =  Refl_ExpNormalized * std::pow(cosAlpha, mPhongExponent);
+        Vec3f glossyComponent =  Refl_ExpNormalized * std::pow(cosTheta, mPhongExponent);
 
         return diffuseComponent + glossyComponent;
     }
