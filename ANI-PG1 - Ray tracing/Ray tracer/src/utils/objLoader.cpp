@@ -36,17 +36,25 @@ sObjLoader::sObjLoader(){
 void sObjLoader::readTriangles(const tinyobj::attrib_t& attrib, const std::vector<tinyobj::shape_t>& shapes, std::vector<uint32_t>& lit_triangles) {
     uint32_t tri_idx = 0;
     // Save tris to scene DS
+
+    const size_t baseTri = _sceneTriangles.size();
+    std::vector<vec3>  tanAccum(attrib.vertices.size() / 3);
+    std::vector<float> tanW(tanAccum.size(), 0.0f);
+    std::vector<std::array<int, 3>> triVertIdx;
+
     for (size_t s = 0; s < shapes.size(); s++) {
         // Loop over faces(polygon)
         size_t index_offset = 0;
         for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++) {
             size_t fv = size_t(shapes[s].mesh.num_face_vertices[f]);
             sTriangle tri;
+            std::array<int, 3> vIdx{};
             bool hasNormals = true;
             // Loop over vertices in the face.
             for (size_t v = 0; v < fv; v++) {
                 // access to vertex
                 tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
+                vIdx[v] = idx.vertex_index;
                 tinyobj::real_t vx = attrib.vertices[3*size_t(idx.vertex_index)+0];
                 tinyobj::real_t vy = attrib.vertices[3*size_t(idx.vertex_index)+1];
                 tinyobj::real_t vz = attrib.vertices[3*size_t(idx.vertex_index)+2];
@@ -87,6 +95,16 @@ void sObjLoader::readTriangles(const tinyobj::attrib_t& attrib, const std::vecto
 
             computeNormalsUVsTangents(tri, hasNormals);
 
+            if (tri._tangents[0].length() > 0.5f) {
+                float area = cross(tri._vertices[1] - tri._vertices[0],
+                                   tri._vertices[2] - tri._vertices[0]).length();
+                for (int k = 0; k < 3; ++k) {
+                    tanAccum[vIdx[k]] += tri._tangents[0] * area;
+                    tanW[vIdx[k]]     += area;
+                }
+            }
+            triVertIdx.push_back(vIdx);
+
             _sceneTriangles.emplace_back(tri);
 
             if(_sceneMaterials[tri._matIdx]._emission.x > 0.0f ||
@@ -96,6 +114,23 @@ void sObjLoader::readTriangles(const tinyobj::attrib_t& attrib, const std::vecto
             
             ++tri_idx;
             index_offset += fv;
+        }
+    }
+    for (size_t i = 0; i < triVertIdx.size(); ++i) {
+        sTriangle& tri = _sceneTriangles[baseTri + i];
+        for (int k = 0; k < 3; ++k) {
+            int vi = triVertIdx[i][k];
+            const vec3& n = tri._normals[k];
+            const vec3 acc = tanAccum[vi];
+
+            // Pól: tangenty kolem se vyruší (|acc| << tanW) -> ponech face tangentu
+            vec3 src = (tanW[vi] > 0.0f && acc.length() > 0.3f * tanW[vi]) ? acc : tri._tangents[k];
+            vec3 t = src - n * dot(n, src);
+
+            if (t.length() < 1e-6f)   // degenerace: libovolná kolmice k n
+                t = (std::abs(n.x) < 0.9f) ? cross(n, vec3(1, 0, 0)) : cross(n, vec3(0, 1, 0));
+
+            tri._tangents[k] = t.normalize();
         }
     }
 }
@@ -132,9 +167,7 @@ void sObjLoader::computeNormalsUVsTangents(sTriangle& tri, bool hasNormals) {
 
     if (std::abs(det) < 1e-8f)
     {
-        tri._tangents[0] = vec3(1,0,0);
-        tri._tangents[1] = vec3(1,0,0);
-        tri._tangents[2] = vec3(1,0,0);
+        tri._tangents[0] = tri._tangents[1] = tri._tangents[2] = vec3();
         return;
     }
 
@@ -148,10 +181,11 @@ void sObjLoader::computeNormalsUVsTangents(sTriangle& tri, bool hasNormals) {
     flatTangent = flatTangent.normalize();
 
     for (uint32_t i = 0; i < DIM; ++i) {
-        vec3 n = tri._normals[i];
-        // Gram-Schmidt: T = T - N * dot(N, T)
-        vec3 t = flatTangent - n * dot(n, flatTangent);
-        tri._tangents[i] = t.normalize();
+        // vec3 n = tri._normals[i];
+        // // Gram-Schmidt: T = T - N * dot(N, T)
+        // vec3 t = flatTangent - n * dot(n, flatTangent);
+        // tri._tangents[i] = t.normalize();
+        tri._tangents[i] = flatTangent;
     }
 
 }
@@ -168,6 +202,7 @@ void sObjLoader::readMaterials(const std::vector<tinyobj::material_t>& materials
             std::cout << "Loading texture: " << m.diffuse_texname << std::endl;
             if(m.diffuse_texname.ends_with(".bin")){
                 _sceneMaterials.back()._brdf = BRDF(m.diffuse_texname);
+                //_sceneMaterials.back()._brdf.loadBrdf(const_cast<char*>(m.diffuse_texname.c_str()));
             } 
             else
                 _sceneMaterials.back()._albedoTex = std::make_shared<cTexture>(m.diffuse_texname);                        

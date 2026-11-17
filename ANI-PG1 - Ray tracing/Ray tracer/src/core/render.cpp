@@ -47,7 +47,9 @@ vec3 cRenderer::traceRay(const sRay& ray, uint32_t depth, bool cullback){
     vec3 uv; // UV coordinates at hit point p for texture mapping
     float texScale;
     vec3 tangent;
-    findIntersection(p, n, ray, uv, hitMat, cullback, texScale, tangent);
+    vec3 ng;
+    vec3 pShadow;
+    findIntersection(p, n, ray, uv, hitMat, cullback, texScale, tangent, ng, pShadow);
 
     if(hitMat == -1)
         return vec3();
@@ -60,13 +62,13 @@ vec3 cRenderer::traceRay(const sRay& ray, uint32_t depth, bool cullback){
     vec3 v = (-ray._dir).normalize();  // direction from hit point P to origin / camera
 
     if(cullback)
-        c += areaLightEvalBRDF(p, n, v, uv, hitMat, texScale,cullback, tangent);
+        c += areaLightEvalBRDF(p, n, v, uv, hitMat, texScale,cullback, tangent, ng, pShadow);
 
     //return c;
     return castSecondaryRays(c, n, ray._dir, p, hitMat, depth, cullback);
 }
 
-vec3 cRenderer::areaLightEvalBRDF(const vec3& p, const vec3& n, const vec3& v, const vec3& uv, const int hitMat , float texScale, bool cullback, const vec3& tangent){
+vec3 cRenderer::areaLightEvalBRDF(const vec3& p, const vec3& n, const vec3& v, const vec3& uv, const int hitMat , float texScale, bool cullback, const vec3& tangent, vec3& ng, vec3& pShadow){
         
     static std::mt19937 gen(std::random_device{}());
     static std::uniform_real_distribution<float> rnd(0.0f, 1.0f);
@@ -88,7 +90,7 @@ vec3 cRenderer::areaLightEvalBRDF(const vec3& p, const vec3& n, const vec3& v, c
             vec3 p_l = a + (b - a) * b1 + (c - a) * b2;
             vec3 dirPL = p_l - p; // direction p - light
 
-            tmp += castShadowRaysEvalBRDF(litTri, dirPL, p, n, v, uv, hitMat, texScale, cullback, tangent); 
+            tmp += castShadowRaysEvalBRDF(litTri, dirPL, p, n, v, uv, hitMat, texScale, cullback, tangent, ng, pShadow); 
         }
         res += tmp * litTri._triArea / static_cast<float>(cfg.LIGHT_SAMPLES);
     }
@@ -99,16 +101,21 @@ vec3 toLocal(const vec3& w, const vec3& t, const vec3& b, const vec3& n) {
       return vec3(dot(w, t), dot(w, b), dot(w, n));
     }
 
-vec3 cRenderer::castShadowRaysEvalBRDF(const sTriangleLight& litTri, const vec3& dirPL,const vec3& p, const vec3& n, const vec3& v, const vec3& uv, const int hitMat, float texScale, bool cullback, const vec3& tangent){
+vec3 cRenderer::castShadowRaysEvalBRDF(const sTriangleLight& litTri, const vec3& dirPL,const vec3& p, const vec3& n, const vec3& v, const vec3& uv, const int hitMat, float texScale, bool cullback, const vec3& tangent, vec3& ng, vec3& pShadow){
 
     float dstPL = dirPL.length(); // dist p - light
     vec3 dirNormalizedPL = dirPL / dstPL; // dir p - light normalized
-    sRay shadowRay(p + n * gEpsilon, dirNormalizedPL);
+
+    vec3 pl = p + dirPL;                         // vzorek na světle (dirPL = p_l - p)
+    vec3 origin = pShadow + ng * gEpsilon;
+    vec3 sd = pl - origin;
+    float sDst = sd.length();
+    sRay shadowRay(origin, sd / sDst);
     ++logger._cntShad;
     
     auto start = std::chrono::steady_clock::now();
     
-    sHitInfo hitInfo = _kdTree.traverse(shadowRay, cullback, true, dstPL - lEpsilon);
+    sHitInfo hitInfo = _kdTree.traverse(shadowRay, false, true, sDst - lEpsilon);
     
     bool inShadow = hitInfo.isHit();
     
@@ -118,13 +125,15 @@ vec3 cRenderer::castShadowRaysEvalBRDF(const sTriangleLight& litTri, const vec3&
     if(!inShadow) {
         vec3 brdfVal;
         if(_loader->_sceneMaterials[hitMat]._brdf.isLoaded()){
-            // // Gram-Schmidt reorthogonalization to ensure an orthonormal TBN frame
+            const BRDF& brdf = _loader->_sceneMaterials[hitMat]._brdf;
+
             vec3 t = (tangent - n * dot(n, tangent)).normalize();
             vec3 b = cross(n, t).normalize();
 
-            vec3 viewDirLocal = toLocal(v, t, b, n).normalize();
+            vec3 viewDirLocal  = toLocal(v, t, b, n).normalize();
             vec3 lightDirLocal = toLocal(dirNormalizedPL, t, b, n).normalize();
-            brdfVal = _loader->_sceneMaterials[hitMat]._brdf.lookupBrdfVal(lightDirLocal, viewDirLocal);
+
+            brdfVal = brdf.lookupBrdfVal(lightDirLocal, viewDirLocal);
         }
         else{
             vec3 r_d = _loader->_sceneMaterials[hitMat]._diffuse;
@@ -268,7 +277,7 @@ std::pair<float, float> cRenderer::calcFresnelParts(const float dotNV, const flo
     return {F0, dotNVi5};
 }
 
-void cRenderer::findIntersection(vec3& p, vec3& n, const sRay& ray, vec3& uvHit, int& hitMat, bool cullback, float& texScale, vec3& t){
+void cRenderer::findIntersection(vec3& p, vec3& n, const sRay& ray, vec3& uvHit, int& hitMat, bool cullback, float& texScale, vec3& t, vec3& ng, vec3& pShadow){
     auto start = std::chrono::steady_clock::now();
     sHitInfo hitInfo = _kdTree.traverse(ray, cullback);
 
@@ -281,16 +290,31 @@ void cRenderer::findIntersection(vec3& p, vec3& n, const sRay& ray, vec3& uvHit,
     if(hitMat == -1)
         return;
 
+    const sTriangle& tri = *hitInfo._hitTri;
     p = ray._origin + ray._dir * hitInfo._t; // Calculate the hit point P
-    texScale = hitInfo._hitTri->_texScale;
+    texScale = tri._texScale;
     float B0 = 1.0f - hitInfo._b1 - hitInfo._b2;
     
-    uvHit = interpolateUV(*hitInfo._hitTri, B0, hitInfo._b1, hitInfo._b2);
+    uvHit = interpolateUV(tri, B0, hitInfo._b1, hitInfo._b2);
 
-    n = hitInfo._hitTri->_normals[0] * B0 + hitInfo._hitTri->_normals[1] * hitInfo._b1 + hitInfo._hitTri->_normals[2] * hitInfo._b2; // Interpolate normal using barycentric coordinates
+    n = tri._normals[0] * B0 + tri._normals[1] * hitInfo._b1 + tri._normals[2] * hitInfo._b2; // Interpolate normal using barycentric coordinates
     n = n.normalize();
-    t = hitInfo._hitTri->_tangents[0] * B0 + hitInfo._hitTri->_tangents[1] * hitInfo._b1 + hitInfo._hitTri->_tangents[2] * hitInfo._b2; // Interpolate tangent
+    t = tri._tangents[0] * B0 + tri._tangents[1] * hitInfo._b1 + tri._tangents[2] * hitInfo._b2; // Interpolate tangent
     t = t.normalize();
+
+     // Geometrická normála, orientovaná stejně jako vertex normály (po winding order nelze spoléhat)
+    ng = cross(tri._vertices[1] - tri._vertices[0], tri._vertices[2] - tri._vertices[0]).normalize();
+    if (dot(ng, n) < 0.0f)
+        ng = -ng;
+
+    // Hanika 2021 "Hacking the Shadow Terminator": posun p nad tečné roviny vertexů,
+    // pokud leží pod nimi. P' = P - sum(b_i * min(0, dot(P - V_i, N_i)) * N_i)
+    pShadow = p;
+    const float bary[3] = {B0, hitInfo._b1, hitInfo._b2};
+    for (int i = 0; i < 3; ++i) {
+        float d = std::min(0.0f, dot(p - tri._vertices[i], tri._normals[i]));
+        pShadow = pShadow - tri._normals[i] * (bary[i] * d);
+    }
 
     n = transformNormal(n, t, uvHit, hitMat);
 }
