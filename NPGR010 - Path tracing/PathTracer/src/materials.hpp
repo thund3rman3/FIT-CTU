@@ -49,9 +49,8 @@ public:
     }
 
     Vec3f SampleSpecular(const Vec3f &incomingDirection, Rng &rng) const {
-        const Vec3f idealReflection(-incomingDirection.x, -incomingDirection.y, incomingDirection.z);
         CoordinateFrame lobeFrame;
-        lobeFrame.SetFromZ(idealReflection);
+        lobeFrame.SetFromZ(ReflectLocal(incomingDirection));
 
         float phi = 2.0f * PI_F * rng.GetFloat();
         float rnd2 = rng.GetFloat();
@@ -71,7 +70,7 @@ public:
      */
     float getSpecularPdf(const Vec3f &incomingDirection, const Vec3f &outgoingDirection) const {
         float Refl_ExpNormalized = (mPhongExponent + 1) * 0.5f * INV_PI_F;
-        Vec3f idealReflection(-incomingDirection.x, -incomingDirection.y, incomingDirection.z);
+        Vec3f idealReflection = ReflectLocal(incomingDirection);
         float cosTheta = std::max(0.0f, Dot(idealReflection, outgoingDirection));
         return Refl_ExpNormalized * std::pow(cosTheta, mPhongExponent);
     }
@@ -101,7 +100,7 @@ public:
         if (mPhongReflectance.Max() <= 0.0f)
             return diffuseComponent;
 
-        Vec3f idealReflection(-incomingDirection.x, -incomingDirection.y, incomingDirection.z);
+        Vec3f idealReflection = ReflectLocal(incomingDirection);
 
         float cosTheta = Dot(idealReflection, outgoingDirection);
         cosTheta = std::max(0.0f, cosTheta);
