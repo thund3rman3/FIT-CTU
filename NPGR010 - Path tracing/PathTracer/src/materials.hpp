@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include "math.hpp"
 #include "rng.hpp"
+#include "utils.hpp"
 
 class Material {
 public:
@@ -18,7 +19,7 @@ public:
         mPhongExponent = 1.f;
     }
 
-    std::tuple<Vec3f, Vec3f, float> SampleImportanceBrdf(const Vec3f &incomingDirection, Rng &rng) const {
+    std::tuple<Vec3f, Vec3f, float> SampleBRDF(const Vec3f &incomingDirection, Rng &rng) const {
         float probDiffuse  = mDiffuseReflectance.Max();
         float probSpecular = mPhongReflectance.Max();
         float normalization = 1.f / (probDiffuse + probSpecular);
@@ -34,7 +35,7 @@ public:
         else
             generatedDir = SampleSpecular(incomingDirection, rng);
 
-        float pdf = EvalPdf(incomingDirection, generatedDir, probDiffuse, probSpecular);
+        float pdf = EvalPdf(incomingDirection, generatedDir, probDiffuse, probSpecular, mPhongExponent);
         return {generatedDir, EvaluateBRDF(incomingDirection, generatedDir), pdf};
     }
 
@@ -62,30 +63,6 @@ public:
     }
 
     /**
-     * Returns the probability density corresponding to sampleReflectedDirection,
-     * i.e., what is the probability that calling sampleReflectedDirection would randomly choose the given outgoingDirection
-     * Arguments:
-     *  - incomingDirection = a normalized direction towards the previous (origin) point in the scene
-     *  - outgoingDirection = the randomly sampled (normalized) outgoing direction
-     */
-    float getSpecularPdf(const Vec3f &incomingDirection, const Vec3f &outgoingDirection) const {
-        float Refl_ExpNormalized = (mPhongExponent + 1) * 0.5f * INV_PI_F;
-        Vec3f idealReflection = ReflectLocal(incomingDirection);
-        float cosTheta = std::max(0.0f, Dot(idealReflection, outgoingDirection));
-        return Refl_ExpNormalized * std::pow(cosTheta, mPhongExponent);
-    }
-
-    float getDiffusePdf(const Vec3f &outgoingDirection) const {
-        return outgoingDirection.z * INV_PI_F;
-    }
-
-    float EvalPdf(const Vec3f& incomingDirection, const Vec3f& generatedDir, float probDiffuse, float probSpecular) const {
-        if (generatedDir.z <= 0.0f)
-            return 0.0f;
-        return probDiffuse * getDiffusePdf(generatedDir) + probSpecular * getSpecularPdf(incomingDirection, generatedDir);
-    }
-
-    /**
      * Returns the intensity corresponding to the reflected light according to this material's BRDF
      * Arguments:
      *  - incomingDirection = a normalized direction towards the previous (origin) point in the scene
@@ -110,6 +87,21 @@ public:
 
         return diffuseComponent + glossyComponent;
     }
+
+
+std::tuple<Vec3f, Vec3f, float> SampleReflectedDirectionCosine(const Vec3f &incomingDirection, Rng &rng) const {
+    Vec3f outDir = SampleHemisphereCos(rng);
+    Vec3f intensity = EvaluateBRDF(incomingDirection, outDir);
+    float pdf = PdfCos(incomingDirection, outDir);
+    return {outDir, intensity, pdf};
+}
+
+std::tuple<Vec3f, Vec3f, float> SampleReflectedDirectionUniform(const Vec3f &incomingDirection, Rng &rng) const {
+    Vec3f outDir = SampleHemisphereUniform(rng);
+    Vec3f intensity = EvaluateBRDF(incomingDirection, outDir);
+    float pdf = PdfUniform(incomingDirection, outDir);
+    return {outDir, intensity, pdf};
+}
 
 public:
     Vec3f mDiffuseReflectance;
