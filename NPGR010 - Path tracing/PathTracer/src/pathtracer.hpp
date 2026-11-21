@@ -1,11 +1,11 @@
 #pragma once
 
-#include <omp.h>
-
 #include <cassert>
 #include <cmath>
+#include <omp.h>
 #include <ostream>
 #include <vector>
+// #include <print>
 
 #include "framebuffer.hpp"
 #include "lights.hpp"
@@ -15,120 +15,128 @@
 #include "scene.hpp"
 
 class PathTracer : public AbstractRenderer {
- public:
-  explicit PathTracer(const Scene &aScene, int aSeed = 1234)
-      : AbstractRenderer(aScene), mRandomGenerator(aSeed) {}
+public:
+    explicit PathTracer(const Scene& aScene, int aSeed = 1234)
+            : AbstractRenderer(aScene), mRandomGenerator(aSeed) {}
 
-  Vec3f EmittedRadiance(const Ray &ray,
-                        const std::optional<Intersection> &hit) {
-    if (!hit.has_value()) {
-      const auto *bg = mScene.GetBackground();
-      return bg ? bg->Evaluate(ray.direction) : Vec3f(0.0f);
-    }
-    if (hit->lightID >= 0)
-      return mScene.GetLightPtr(hit->lightID)->Evaluate(-ray.direction);
-    return Vec3f(0.0f);
-  }
-
-  // Light sampling
-  Vec3f EvalLight(const AbstractLight *&light, const CoordinateFrame &frame,
-                  const Vec3f &surfacePoint, const Material &mat,
-                  const Vec3f &incomingDirection) {
-    auto [lightPoint, intensity, pdf] =
-        light->SamplePointOnLight(surfacePoint, mRandomGenerator);
-    Vec3f dirToLight = lightPoint - surfacePoint;
-    float lightDistance = sqrt(dirToLight.LenSqr());
-    Vec3f outgoingDirection = dirToLight / lightDistance;
-    Vec3f localOutDir = frame.ToLocal(outgoingDirection);
-    float cosTheta = localOutDir.z;
-
-    if (cosTheta <= 0.0f || intensity.Max() <= 0.0f || pdf <= 0.0f) {
-      return Vec3f(0.0f);
+    Vec3f EmittedRadiance(const Ray& ray, const std::optional<Intersection>& hit) {
+        if (!hit.has_value()) {
+            const auto* bg = mScene.GetBackground();
+            return bg ? bg->Evaluate(ray.direction) : Vec3f(0.0f);
+        }
+        if (hit->lightID >= 0) {
+            return mScene.GetLightPtr(hit->lightID)->Evaluate(-ray.direction);
+        }
+        return Vec3f(0.0f);
     }
 
-    Ray shadowRay(surfacePoint, outgoingDirection, EPSILON_RAY);
-    if (mScene.FindAnyIntersection(shadowRay, lightDistance)) {
-      return Vec3f(0.0f);
+    Vec3f GetDirectIlluminationLight(const AbstractLight& light, const Vec3f& surfacePoint,
+        const CoordinateFrame& frame, const Material& mat, const Vec3f& incomingDirection) {
+        auto [lightPoint, lightIntensity, pdfB] = light.SamplePointOnLight(surfacePoint, mRandomGenerator);
+
+        Vec3f dirToLight        = lightPoint - surfacePoint;
+        float lightDistance     = sqrt(dirToLight.LenSqr());
+        Vec3f outgoingDirection = dirToLight / lightDistance;
+        Vec3f localOutDirB      = frame.ToLocal(outgoingDirection);
+        float cosThetaB         = localOutDirB.z;
+
+        if (cosThetaB <= 0.0f || lightIntensity.Max() <= 0.0f || pdfB <= 0.0f) {
+            return Vec3f(0.0f);
+        }
+
+        Ray shadowRay(surfacePoint, outgoingDirection, EPSILON_RAY);
+        if (mScene.FindAnyIntersection(shadowRay, lightDistance)) {
+            return Vec3f(0.0f);
+        }
+
+        Vec3f brdf           = mat.EvaluateBRDF(incomingDirection, localOutDirB);
+        float pdfAsIfFromA_B = light.IsPoint() ? 0.0f : mat.EvalPdf(incomingDirection, localOutDirB);
+        float weightMIS_B    = pdfB / (pdfB + pdfAsIfFromA_B);
+
+        return weightMIS_B * lightIntensity * brdf * cosThetaB / pdfB;
     }
 
-    Vec3f brdf = mat.EvaluateBRDF(incomingDirection, localOutDir);
-    return intensity * brdf * cosTheta / pdf;
-  }
+    // brdf sampling
+    Vec3f GetDirectIlluminationBRDF(
+        const Vec3f& surfacePoint, const CoordinateFrame& frame, const Material& mat, const Vec3f& incomingDirection) {
+        const auto [localOutDirA, brdfA, pdfA] = mat.SampleBRDF(incomingDirection, mRandomGenerator);
 
-  Vec3f GetDirectIlluminationLight(const Ray &ray, const Intersection &hit) {
-    Vec3f LoDirect(0.0f);
+        float cosThetaA = localOutDirA.z;
+        if (cosThetaA <= 0.0f || brdfA.Max() <= 0.0f || pdfA <= 0.0f) {
+            return Vec3f(0.0f);
+        }
 
-    const Vec3f surfacePoint = ray.origin + ray.direction * hit.distance;
-    CoordinateFrame frame;
-    frame.SetFromZ(hit.normal);
-    const Vec3f incomingDirection = frame.ToLocal(-ray.direction);
-    const Material &mat = mScene.GetMaterial(hit.materialID);
+        Vec3f worldOutDir = frame.ToWorld(localOutDirA);
+        Ray shadowRay(surfacePoint, worldOutDir, EPSILON_RAY);
 
-    // Connect from the current surface point to every light source in the
-    // scene:
-    for (int i = 0; i < mScene.GetLightCount(); i++) {
-      if (const AbstractLight *light = mScene.GetLightPtr(i))
-        LoDirect +=
-            EvalLight(light, frame, surfacePoint, mat, incomingDirection);
+        const auto intersectionShadowRay = mScene.FindClosestIntersection(shadowRay);
+        Vec3f emittedRadiance            = EmittedRadiance(shadowRay, intersectionShadowRay);
+
+        if (emittedRadiance.Max() <= 0.0f) {
+            return Vec3f(0.0f);
+        }
+
+        float pdfAsIfFromB_A(0.0f);
+
+        if (intersectionShadowRay.has_value() && intersectionShadowRay->lightID >= 0) {
+            const Vec3f lightPoint = shadowRay.origin + shadowRay.direction * intersectionShadowRay->distance;
+            int hitLight           = intersectionShadowRay->lightID;
+            pdfAsIfFromB_A         = mScene.GetLightPtr(hitLight)->PDF(surfacePoint, lightPoint);
+        } else if (const auto* bg = mScene.GetBackground()) {
+            pdfAsIfFromB_A = bg->PDF(surfacePoint, surfacePoint);
+        }
+        float weightMIS_A = pdfA / (pdfA + pdfAsIfFromB_A);
+
+        return weightMIS_A * emittedRadiance * brdfA * cosThetaA / pdfA;
     }
 
-    return LoDirect;
-  }
+    Vec3f GetDirectIlluminationMIS(const Ray& ray, const Intersection& hit) {
+        const Vec3f surfacePoint = ray.origin + ray.direction * hit.distance;
+        CoordinateFrame frame;
+        frame.SetFromZ(hit.normal);
+        const Vec3f incomingDirection = frame.ToLocal(-ray.direction);
+        const Material& mat           = mScene.GetMaterial(hit.materialID);
 
-  // brdf sampling
+        // A: BRDF Sampling
+        Vec3f estimatedRadiance = GetDirectIlluminationBRDF(surfacePoint, frame, mat, incomingDirection);
 
-  Vec3f GetDirectIlluminationBRDF(const Ray &ray, const Intersection &hit) {
-    const Vec3f surfacePoint = ray.origin + ray.direction * hit.distance;
-    CoordinateFrame frame;
-    frame.SetFromZ(hit.normal);
-    const Vec3f incomingDirection = frame.ToLocal(-ray.direction);
-    const Material &mat = mScene.GetMaterial(hit.materialID);
-
-    auto [localOutDir, brdf, pdf] =
-        mat.SampleBRDF(incomingDirection, mRandomGenerator);
-    float cosTheta = localOutDir.z;
-
-    if (cosTheta <= 0.0f || brdf.Max() <= 0.0f || pdf <= 0.0f) {
-      return Vec3f(0.0f);
+        // B: Light Sampling
+        for (int i = 0; i < mScene.GetLightCount(); i++) {
+            const AbstractLight* light = mScene.GetLightPtr(i);
+            if (!light) {
+                continue;
+            }
+            estimatedRadiance += GetDirectIlluminationLight(*light, surfacePoint, frame, mat, incomingDirection);
+        }
+        return estimatedRadiance;
     }
 
-    Ray shadowRay(surfacePoint, frame.ToWorld(localOutDir), EPSILON_RAY);
-    const auto intersectionShadowRay =
-        mScene.FindClosestIntersection(shadowRay);
-    Vec3f intensity = EmittedRadiance(shadowRay, intersectionShadowRay);
+    void RunIteration() override {
+        const int resolutionX = static_cast<int>(mScene.mCamera.mResolution.x);
+        const int resolutionY = static_cast<int>(mScene.mCamera.mResolution.y);
+        Vec3f LoDirect;
 
-    return intensity * brdf * cosTheta / pdf;
-  }
+        for (int pixelID = 0; pixelID < resolutionX * resolutionY; pixelID++) {
+            const int x = pixelID % resolutionX;
+            const int y = pixelID / resolutionX;
 
-  void RunIteration() override {
-    const int resolutionX = static_cast<int>(mScene.mCamera.mResolution.x);
-    const int resolutionY = static_cast<int>(mScene.mCamera.mResolution.y);
-    Vec3f LoDirect;
+            const Vec2f sample      = Vec2f(static_cast<float>(x), static_cast<float>(y)) + mRandomGenerator.GetVec2f();
+            Ray ray                 = mScene.mCamera.GenerateRay(sample);
+            const auto intersection = mScene.FindClosestIntersection(ray);
 
-    for (int pixelID = 0; pixelID < resolutionX * resolutionY; pixelID++) {
-      const int x = pixelID % resolutionX;
-      const int y = pixelID / resolutionX;
+            const Vec3f radiance = EmittedRadiance(ray, intersection);
+            if (radiance.Max() > 0.0f) {
+                LoDirect = radiance;
+            } else {
+                LoDirect = GetDirectIlluminationMIS(ray, intersection.value());
+            }
 
-      const Vec2f sample = Vec2f(static_cast<float>(x), static_cast<float>(y)) +
-                           mRandomGenerator.GetVec2f();
+            mFramebuffer.AddColor(sample, LoDirect);
+        }
 
-      Ray ray = mScene.mCamera.GenerateRay(sample);
-      const auto intersection = mScene.FindClosestIntersection(ray);
-
-      const Vec3f radiance = EmittedRadiance(ray, intersection);
-      if (radiance.Max() > 0.0f)
-        LoDirect = radiance;
-      else {
-        LoDirect = GetDirectIlluminationBRDF(ray, intersection.value());
-        // LoDirect = GetDirectIlluminationLight(ray, intersection.value());
-      }
-
-      mFramebuffer.AddColor(sample, LoDirect);
+        mIterations++;
     }
 
-    mIterations++;
-  }
-
- public:
-  Rng mRandomGenerator;
+public:
+    Rng mRandomGenerator;
 };

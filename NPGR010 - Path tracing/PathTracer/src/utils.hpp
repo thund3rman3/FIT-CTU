@@ -75,13 +75,6 @@ inline Vec3f SampleHemisphereCos(Rng& rng)
     return {r * std::cos(phi), r * std::sin(phi), cosTheta};
 }
 
-/**
-     * Returns the probability density corresponding to sampleReflectedDirection,
-     * i.e., what is the probability that calling sampleReflectedDirection would randomly choose the given outgoingDirection
-     * Arguments:
-     *  - incomingDirection = a normalized direction towards the previous (origin) point in the scene
-     *  - outgoingDirection = the randomly sampled (normalized) outgoing direction
-     */
 inline float getSpecularPdf(const Vec3f& inDir, const Vec3f& outDir, float phongExponent)
 {
     float Refl_ExpNormalized = (phongExponent + 1) * 0.5f * INV_PI_F;
@@ -95,15 +88,13 @@ inline float getDiffusePdf(const Vec3f& outDir)
     return outDir.z * INV_PI_F;
 }
 
-inline float EvalPdf(const Vec3f& inDir, const Vec3f& generatedDir, float probDiffuse, float probSpecular,
-                     float phongExponent)
-{
-    if (generatedDir.z <= 0.0f)
-        return 0.0f;
-    return probDiffuse * getDiffusePdf(generatedDir) + probSpecular *
-        getSpecularPdf(inDir, generatedDir, phongExponent);
-}
-
+/**
+     * Returns the probability density corresponding to sampleReflectedDirection,
+     * i.e., what is the probability that calling sampleReflectedDirection would randomly choose the given outgoingDirection
+     * Arguments:
+     *  - incomingDirection = a normalized direction towards the previous (origin) point in the scene
+     *  - outgoingDirection = the randomly sampled (normalized) outgoing direction
+     */
 inline float PdfCos(const Vec3f& inDir, const Vec3f& outDir)
 {
     return outDir.z > 0.0f ? outDir.z * INV_PI_F : 0.0f;

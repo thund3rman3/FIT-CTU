@@ -119,6 +119,7 @@ public:
         aMat.mPhongExponent = aPhongExponent;
         if (aGlossy)
             aMat.mDiffuseReflectance /= 2; // to make it energy conserving
+        aMat.SetReflectanceProbs();
     }
 
     void LoadCornellBox(const Vec2i &aResolution, uint aBoxMask = kDefault) {

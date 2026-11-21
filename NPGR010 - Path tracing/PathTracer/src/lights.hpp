@@ -38,6 +38,8 @@ public:
      */
     virtual Vec3f Evaluate(const Vec3f &dirFromLight) const = 0;
 
+    virtual bool IsPoint() const = 0;
+
     virtual ~AbstractLight() = default;
 };
 
@@ -88,6 +90,10 @@ public:
         return cosTheta > 0.0f ? mRadiance : Vec3f(0);
     }
 
+    bool IsPoint() const override {
+        return false;
+    }
+
 public:
     CoordinateFrame mFrame;
     Vec3f p0, e1, e2;
@@ -114,7 +120,11 @@ public:
     }
 
     Vec3f Evaluate(const Vec3f &dirFromLight) const override {
-        return Vec3f(0);
+        return Vec3f(0.0f);
+    }
+
+    bool IsPoint() const override {
+        return true;
     }
 
 public:
@@ -151,6 +161,10 @@ public:
 
     Vec3f Evaluate(const Vec3f &dirFromLight) const override {
         return mBackgroundColor;
+    }
+
+    bool IsPoint() const override {
+        return false;
     }
 
 public:
