@@ -4,18 +4,21 @@
 #include <cmath>
 #include <utility>
 #include "math.hpp"
+#include "rng.hpp"
 
 #define EPSILON_COSINE 1e-6f
 #define EPSILON_RAY    1e-3f
 
 // sRGB luminance
-inline float Luminance(const Vec3f &aRGB) {
+inline float Luminance(const Vec3f& aRGB)
+{
     return 0.212671f * aRGB.x + 0.715160f * aRGB.y + 0.072169f * aRGB.z;
 }
 
 // reflect vector through (0,0,1)
-inline Vec3f ReflectLocal(const Vec3f &aVector) {
-    return Vec3f(-aVector.x, -aVector.y, aVector.z);
+inline Vec3f ReflectLocal(const Vec3f& aVector)
+{
+    return {-aVector.x, -aVector.y, aVector.z};
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -23,15 +26,35 @@ inline Vec3f ReflectLocal(const Vec3f &aVector) {
 // WtoA = PdfW * cosine / distance_squared
 // AtoW = PdfA * distance_squared / cosine
 
-inline float PdfWtoA(const float aPdfW, const float aDist, const float aCosThere) {
+inline float PdfWtoA(const float aPdfW, const float aDist, const float aCosThere)
+{
     return aPdfW * std::abs(aCosThere) / Sqr(aDist);
 }
 
-inline float PdfAtoW(const float aPdfA, const float aDist, const float aCosThere) {
+inline float PdfAtoW(const float aPdfA, const float aDist, const float aCosThere)
+{
     return aPdfA * Sqr(aDist) / std::abs(aCosThere);
 }
 
-std::tuple<Vec3f, Vec3f, float> SampleReflectedDirectionCosine(const Vec3f &incomingDirection, Rng &rng) const {
+inline Vec3f SampleHemisphereUniform(Rng& rng){
+    // Uniform hemispherical sampling
+
+    // Height cos(theta), uniform in <0; 1).
+    // Solid angle element is dw = sin(theta) dtheta dphi = dz dphi, so uniform
+    // cosTheta and uniform phi give uniform directions
+    float cosTheta = rng.GetFloat(); // sample height
+
+    // Azimuth angle around Z (Up/Normal) Axis from <0;2PI)
+    float phi = 2.0f * PI_F * rng.GetFloat();
+
+    // Radius of the circle at height z on the unit sphere (Pythagoras):
+    // r^2 + cosTheta^2 = 1  ->  r = sqrt(1 - cosTheta^2)
+    float r = std::sqrt(std::max(0.0f, 1.0f - cosTheta * cosTheta));
+    return {r * std::cos(phi), r * std::sin(phi), cosTheta};
+}
+
+inline Vec3f SampleHemisphereCos(Rng& rng)
+{
     // Hemispherical sampling proportional to cos(theta)
 
     // Azimuth angle around Z-Up-Axis from <0;2PI)
@@ -49,38 +72,44 @@ std::tuple<Vec3f, Vec3f, float> SampleReflectedDirectionCosine(const Vec3f &inco
     // Horizontal radius in height cosTheta, gotten from Pyhagoras:
     // r^2+cosTheta^2 = 1; r = sqrt(1-(1-rnd2))
     float r = std::sqrt(rnd2);
-    Vec3f outDir(r * std::cos(phi), r * std::sin(phi), cosTheta);
-
-    Vec3f intensity = EvaluateBRDF(incomingDirection, outDir);
-    float pdf = PdfCos(incomingDirection, outDir);
-    return {outDir, intensity, pdf};
+    return {r * std::cos(phi), r * std::sin(phi), cosTheta};
 }
 
-std::tuple<Vec3f, Vec3f, float> SampleReflectedDirectionUniform(const Vec3f &incomingDirection, Rng &rng) const {
-    // Uniform hemispherical sampling
-
-    // Height cos(theta), uniform in <0; 1).
-    // Solid angle element is dw = sin(theta) dtheta dphi = dz dphi, so uniform
-    // cosTheta and uniform phi give uniform directions
-    float cosTheta = rng.GetFloat(); // sample height
-
-    // Azimuth angle around Z (Up/Normal) Axis from <0;2PI)
-    float phi = 2.0f * PI_F * rng.GetFloat();
-
-    // Radius of the circle at height z on the unit sphere (Pythagoras):
-    // r^2 + cosTheta^2 = 1  ->  r = sqrt(1 - cosTheta^2)
-    float r = std::sqrt(std::max(0.0f, 1.0f - cosTheta * cosTheta));
-    Vec3f outDir(r * std::cos(phi), r * std::sin(phi), cosTheta);
-
-    Vec3f intensity = EvaluateBRDF(incomingDirection, outDir);
-    float pdf = PdfUniform(incomingDirection, outDir);
-    return {outDir, intensity, pdf};
+/**
+     * Returns the probability density corresponding to sampleReflectedDirection,
+     * i.e., what is the probability that calling sampleReflectedDirection would randomly choose the given outgoingDirection
+     * Arguments:
+     *  - incomingDirection = a normalized direction towards the previous (origin) point in the scene
+     *  - outgoingDirection = the randomly sampled (normalized) outgoing direction
+     */
+inline float getSpecularPdf(const Vec3f& inDir, const Vec3f& outDir, float phongExponent)
+{
+    float Refl_ExpNormalized = (phongExponent + 1) * 0.5f * INV_PI_F;
+    Vec3f idealReflection = ReflectLocal(inDir);
+    float cosTheta = std::max(0.0f, Dot(idealReflection, outDir));
+    return Refl_ExpNormalized * std::pow(cosTheta, phongExponent);
 }
 
-float PdfCos(const Vec3f &incomingDirection, const Vec3f &outgoingDirection) const {
-    return outgoingDirection.z > 0.0f ? outgoingDirection.z * INV_PI_F : 0.0f;
+inline float getDiffusePdf(const Vec3f& outDir)
+{
+    return outDir.z * INV_PI_F;
 }
 
-float PdfUniform(const Vec3f &incomingDirection, const Vec3f &outgoingDirection) const {
-    return outgoingDirection.z > 0.0f ? 0.5f * INV_PI_F : 0.0f;
+inline float EvalPdf(const Vec3f& inDir, const Vec3f& generatedDir, float probDiffuse, float probSpecular,
+                     float phongExponent)
+{
+    if (generatedDir.z <= 0.0f)
+        return 0.0f;
+    return probDiffuse * getDiffusePdf(generatedDir) + probSpecular *
+        getSpecularPdf(inDir, generatedDir, phongExponent);
+}
+
+inline float PdfCos(const Vec3f& inDir, const Vec3f& outDir)
+{
+    return outDir.z > 0.0f ? outDir.z * INV_PI_F : 0.0f;
+}
+
+inline float PdfUniform(const Vec3f& inDir, const Vec3f& outDir)
+{
+    return outDir.z > 0.0f ? 0.5f * INV_PI_F : 0.0f;
 }
