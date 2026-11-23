@@ -54,9 +54,8 @@ Model byl jemně doladěn (fine-tuning) s nižším learning rate $\eta = 10^{-4
 
 ### 2.3 Srovnání průběhu trénování
 
-![](/IMGS3/models_comparison.png)
-
-*Obrázek 2: Srovnání trénovací a validační ztráty (vlevo) a přesnosti (vpravo) mezi vlastní CNN architekturou a modelem ResNet18.*
+![](/IMGS3/models_comparisonFreeze.png)
+![](/IMGS3/models_comparisonFine.png)
 
 ### 2.4 Kvantitativní vyhodnocení a matice záměn
 
@@ -88,9 +87,8 @@ Pro hloubkovou analýzu rozhodovacího mechanismu klasifikačních modelů byly 
 
 ### 3.1 Výsledky interpretace pro ResNet18
 
-![](/IMGS3/xai_samples_resnet.png)
-
-*Obrázek 4: XAI analýza pro model ResNet18. Zleva doprava: vstupní obrázek s predikcí a jistotou, ground truth rozdíl (oblast inpaintingu), Grad-CAM heatmapa překrytá přes obrázek, Saliency mapa a mapa Integrated Gradients.*
+![](/IMGS3/xai_samples_resnetFreeze.png)
+![](/IMGS3/xai_samples_resnetFine.png)
 
 ### 3.2 Výsledky interpretace pro vlastní CNN
 
