@@ -47,13 +47,16 @@ def plot_dataset_samples(
 
 def plot_training_comparison(
         hist_custom: Dict[str, List[float]],
-        hist_resnet: Dict[str, List[float]],
+        hist_resnet_frozen: Dict[str, List[float]],
+        hist_resnet_finetuned: Dict[str, List[float]],
         save_path: Optional[Union[Path, str]] = None):
     """
     Plots training and validation loss and accuracy comparison.
     """
     epochs_custom = range(1, len(hist_custom["train_loss"]) + 1)
-    epochs_resnet = range(1, len(hist_resnet["train_loss"]) + 1)
+    epochs_resnet_frozen = range(1, len(hist_resnet_frozen["train_loss"]) + 1)
+    epochs_resnet_finetuned = range(
+        1, len(hist_resnet_finetuned["train_loss"]) + 1)
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
 
@@ -62,13 +65,19 @@ def plot_training_comparison(
              hist_custom["train_loss"], "b--", label="Custom CNN (Train)")
     ax1.plot(epochs_custom, hist_custom["val_loss"],
              "b-", lw=2, label="Custom CNN (Val)")
-    ax1.plot(epochs_resnet,
-             hist_resnet["train_loss"], "r--", label="ResNet18 (Train)")
-    ax1.plot(epochs_resnet, hist_resnet["val_loss"],
-             "r-", lw=2, label="ResNet18 (Val)")
+    ax1.plot(epochs_resnet_frozen,
+             hist_resnet_frozen["train_loss"], "r--", label="ResNet18 frozen (Train)")
+    ax1.plot(epochs_resnet_frozen, hist_resnet_frozen["val_loss"],
+             "r-", lw=2, label="ResNet18 frozen (Val)")
+
+    ax1.plot(epochs_resnet_finetuned,
+             hist_resnet_finetuned["train_loss"], "g--", label="ResNet18 finetuned (Train)")
+    ax1.plot(epochs_resnet_finetuned, hist_resnet_finetuned["val_loss"],
+             "g-", lw=2, label="ResNet18 finetuned (Val)")
+
     ax1.set_title("Loss Curves Comparison", fontsize=13, fontweight="bold")
     ax1.set_xlabel("Epoch", fontsize=11)
-    ax1.set_ylabel("Cross Entropy Loss", fontsize=11)
+    ax1.set_ylabel("BCE", fontsize=11)
     ax1.grid(True, linestyle="--", alpha=0.5)
     ax1.legend(fontsize=10)
 
@@ -77,10 +86,16 @@ def plot_training_comparison(
              hist_custom["train_acc"], "b--", label="Custom CNN (Train)")
     ax2.plot(epochs_custom, hist_custom["val_acc"],
              "b-", lw=2, label="Custom CNN (Val)")
-    ax2.plot(epochs_resnet,
-             hist_resnet["train_acc"], "r--", label="ResNet18 (Train)")
-    ax2.plot(epochs_resnet, hist_resnet["val_acc"],
-             "r-", lw=2, label="ResNet18 (Val)")
+    ax2.plot(epochs_resnet_frozen,
+             hist_resnet_frozen["train_acc"], "r--", label="ResNet18 frozen (Train)")
+    ax2.plot(epochs_resnet_frozen, hist_resnet_frozen["val_acc"],
+             "r-", lw=2, label="ResNet18 frozen (Val)")
+
+    ax2.plot(epochs_resnet_finetuned,
+             hist_resnet_finetuned["train_acc"], "g--", label="ResNet18 finetuned (Train)")
+    ax2.plot(epochs_resnet_finetuned, hist_resnet_finetuned["val_acc"],
+             "g-", lw=2, label="ResNet18 finedtuned (Val)")
+
     ax2.set_title("Accuracy Curves Comparison", fontsize=13, fontweight="bold")
     ax2.set_xlabel("Epoch", fontsize=11)
     ax2.set_ylabel("Accuracy", fontsize=11)
@@ -93,7 +108,8 @@ def plot_training_comparison(
 
 def plot_confusion_matrices(
         metrics_custom: Dict[str, Any],
-        metrics_resnet: Dict[str, Any],
+        metrics_resnet_finetuned: Dict[str, Any],
+        metrics_resnet_frozen: Dict[str, Any],
         class_names: Optional[List[str]] = None,
         save_path: Optional[Union[Path, str]] = None):
     """
@@ -102,12 +118,12 @@ def plot_confusion_matrices(
     if class_names is None:
         class_names = ["Original", "Inpainted"]
 
-    fig, axes = plt.subplots(1, 2, figsize=(13, 5))
+    fig, axes = plt.subplots(1, 3, figsize=(13, 5))
 
     for ax, metrics, title in zip(
         axes,
-        [metrics_custom, metrics_resnet],
-        ["Custom CNN", "Pretrained ResNet18"]
+        [metrics_custom, metrics_resnet_finetuned, metrics_resnet_frozen],
+        ["Custom CNN", "finetuned ResNet18", "frozen ResNet18"]
     ):
         cm = metrics["confusion_matrix"]
         ax.imshow(cm, interpolation="nearest", cmap=plt.cm.Blues)
@@ -180,7 +196,7 @@ def plot_xai_samples(
 
     for idx, (s, img_raw, target_c) in enumerate(expanded_items):
         inp_tensor = process_img(
-            img_raw, transform, to_rgb=to_rgb).unsqueeze(0).to(dev)
+            img_raw, transform).unsqueeze(0).to(dev)
 
         model.eval()
         with torch.no_grad():
@@ -331,8 +347,7 @@ def extract_embeddings(
 
     with torch.no_grad():
         for s in expanded:
-            t = process_img(s["image"], transform,
-                            to_rgb=True).unsqueeze(0).to(dev)
+            t = process_img(s["image"], transform).unsqueeze(0).to(dev)
             e = model.forward_one(t).cpu().numpy()[0]
             embs.append(e)
             labels.append(int(s["label"]))
@@ -344,7 +359,7 @@ def plot_siamese_pair_examples(
         model: SiameseNetwork,
         pairs: List[Tuple[Dict[str, Any], Dict[str, Any], float]],
         num_examples: int = 4,
-        img_size: Optional[int] = 128,
+        img_size: int = 256,
         threshold: float = 0.5,
         device: Union[str, torch.device] = "cpu",
         save_path: Optional[Union[Path, str]] = None):
@@ -352,24 +367,27 @@ def plot_siamese_pair_examples(
     model.to(dev)
     model.eval()
 
-    sz = 128 if img_size is None else img_size
     transform = v2.Compose([
-        v2.Resize((sz, sz), interpolation=v2.InterpolationMode.BILINEAR),
+        v2.Resize((img_size, img_size),
+                  interpolation=v2.InterpolationMode.BILINEAR),
         v2.ToDtype(torch.float32, scale=True),
         v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
 
     n = min(num_examples, len(pairs))
-    fig, axes = plt.subplots(n, 2, figsize=(8, 3.2 * n))
+    fig, axes = plt.subplots(n, 2, figsize=(9.5, 3.4 * n))
     if n == 1:
         axes = np.expand_dims(axes, 0)
+
+    # Větší mezera (wspace) mezi oběma obrázky pro text uprostřed
+    plt.subplots_adjust(wspace=0.45, hspace=0.35)
 
     for i in range(n):
         s1, s2, true_label = pairs[i]
         im1, im2 = s1["image"], s2["image"]
 
-        t1 = process_img(im1, transform, to_rgb=True).unsqueeze(0).to(dev)
-        t2 = process_img(im2, transform, to_rgb=True).unsqueeze(0).to(dev)
+        t1 = process_img(im1, transform).unsqueeze(0).to(dev)
+        t2 = process_img(im2, transform).unsqueeze(0).to(dev)
 
         with torch.no_grad():
             res = model(t1, t2)
@@ -378,19 +396,32 @@ def plot_siamese_pair_examples(
 
         pred_similar = dist < threshold
         is_correct = (pred_similar == (true_label == 1.0))
-        relation_str = "Similar (Positive)" if true_label == 1.0 else "Dissimilar (Negative)"
-        status_str = "CORRECT" if is_correct else "WRONG"
+        relation_str = "Similar\n(Positive)" if true_label == 1.0 else "Dissimilar\n(Negative)"
+        status_str = f"[{'CORRECT' if is_correct else 'WRONG'}]"
+        status_color = "green" if is_correct else "red"
 
         axes[i, 0].imshow(im1, cmap="gray")
-        axes[i, 0].set_title(f"Sample 1: {s1['label_name']}", fontsize=10)
+        axes[i, 0].set_title(
+            f"Sample 1: {s1['label_name']}", fontsize=10, color="black")
         axes[i, 0].axis("off")
 
         axes[i, 1].imshow(im2, cmap="gray")
         axes[i, 1].set_title(
-            f"Sample 2: {s2['label_name']}\nTrue: {relation_str}\nDist: {dist:.3f} [{status_str}]",
-            fontsize=10, color="green" if is_correct else "red"
-        )
+            f"Sample 2: {s2['label_name']}", fontsize=10, color="black")
         axes[i, 1].axis("off")
+
+        axes[i, 0].text(
+            1.225, 0.58,
+            f"True:\n{relation_str}\n\nDist: {dist:.3f}",
+            transform=axes[i, 0].transAxes,
+            ha="center", va="center", fontsize=9.5, color="black"
+        )
+        axes[i, 0].text(
+            1.225, 0.28,
+            status_str,
+            transform=axes[i, 0].transAxes,
+            ha="center", va="center", fontsize=10.5, fontweight="bold", color=status_color
+        )
 
     plt.tight_layout()
     save_figure(fig, save_path)

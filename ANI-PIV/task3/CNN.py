@@ -100,11 +100,11 @@ def get_pretrained_resnet(
         for param in model.parameters():
             param.requires_grad = False
 
-    # Extract input feature dimension safely for static type checkers
+    # Extract input (512) feature dimension safely for static type checkers
     in_features: int = getattr(model.fc, "in_features", 512)
 
     cast(Any, model).fc = nn.Sequential(
         nn.Dropout(0.2),
-        nn.Linear(in_features, num_classes)
+        nn.Linear(in_features, num_classes)  # 512 -> 2
     )
     return model

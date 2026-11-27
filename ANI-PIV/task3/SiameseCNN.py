@@ -107,8 +107,8 @@ class SiameseDataset(Dataset):
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         s1, s2, label = self.pairs[idx]
-        t1 = process_img(s1["image"], self.normalize, self.aug, to_rgb=True)
-        t2 = process_img(s2["image"], self.normalize, self.aug, to_rgb=True)
+        t1 = process_img(s1["image"], self.normalize, self.aug)
+        t2 = process_img(s2["image"], self.normalize, self.aug)
         return t1, t2, torch.tensor(label, dtype=torch.float32)
 
 
