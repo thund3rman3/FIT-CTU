@@ -2,7 +2,6 @@ import random
 from typing import Tuple, List, Dict, Optional, Union, Any
 
 import numpy as np
-from matplotlib.figure import Figure
 
 import torch
 import torch.nn as nn
@@ -15,33 +14,36 @@ from utils3 import process_img
 
 class SiameseNetwork(nn.Module):
     """
-    Siamese Network with shared CNN feature extractor and L2-normalized embedding.
+    Siamese Network with Double-Conv shared CNN feature extractor and L2-normalized embedding.
     Supports both pair forward (x1, x2) and single-image forward (x1).
     """
 
-    def __init__(self, in_channels: int = 3, embedding_dim: int = 64):
+    def __init__(self, in_channels: int = 3, embedding_dim: int = 32):
         super().__init__()
+
+        def double_conv_block(in_c: int, out_c: int, pool: nn.Module) -> nn.Sequential:
+            return nn.Sequential(
+                nn.Conv2d(in_c, out_c, kernel_size=3, padding=1, bias=False),
+                nn.BatchNorm2d(out_c),
+                nn.LeakyReLU(0.1, inplace=False),
+                nn.Conv2d(out_c, out_c, kernel_size=3, padding=1, bias=False),
+                nn.BatchNorm2d(out_c),
+                nn.LeakyReLU(0.1, inplace=False),
+                pool,
+            )
+
         self.encoder = nn.Sequential(
-            nn.Conv2d(in_channels, 32, kernel_size=3, padding=1),
-            nn.BatchNorm2d(32),
-            nn.ReLU(inplace=False),
-            nn.MaxPool2d(2),  # 128 -> 64
-
-            nn.Conv2d(32, 64, kernel_size=3, padding=1),
-            nn.BatchNorm2d(64),
-            nn.ReLU(inplace=False),
-            nn.MaxPool2d(2),  # 64 -> 32
-
-            nn.Conv2d(64, 128, kernel_size=3, padding=1),
-            nn.BatchNorm2d(128),
-            nn.ReLU(inplace=False),
-            nn.AdaptiveAvgPool2d((2, 2))  # 32 -> 2
+            double_conv_block(in_channels, 32, nn.MaxPool2d(2)),        # 128 -> 64
+            double_conv_block(32, 64, nn.MaxPool2d(2)),                 # 64 -> 32
+            double_conv_block(64, 128, nn.MaxPool2d(2)),                # 32 -> 16
+            double_conv_block(128, 256, nn.AdaptiveAvgPool2d((1, 1))),  # 16 -> 1
         )
         self.projector = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(128 * 2 * 2, 128),
-            nn.ReLU(inplace=False),
-            nn.Linear(128, embedding_dim)
+            nn.Dropout(0.2),
+            nn.Linear(256, 128),
+            nn.LeakyReLU(0.1, inplace=False),
+            nn.Linear(128, embedding_dim),
         )
 
     def forward_one(self, x: torch.Tensor) -> torch.Tensor:
@@ -57,7 +59,6 @@ class SiameseNetwork(nn.Module):
         if x2 is None:
             return self.forward_one(x1)
         return self.forward_one(x1), self.forward_one(x2)
-
 
 class ContrastiveLoss(nn.Module):
     """
@@ -126,13 +127,14 @@ def train_siamese_network(
     """
     dev = torch.device(device)
     model = model.to(dev)
-    criterion = ContrastiveLoss(margin=margin)
+    loss_fn = ContrastiveLoss(margin=margin)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
     history: Dict[str, List[float]] = {
         "train_loss": [], "val_loss": [], "val_acc": []}
 
-    print(f"{'Epoch':<6} | {'Train Loss':<12} | {'Val Loss':<12} | {'Val Acc (tau=0.5)':<15}")
+    tau_hdr = f"Val Acc (tau={margin / 2.0:.2f})"
+    print(f"{'Epoch':<6} | {'Train Loss':<12} | {'Val Loss':<12} | {tau_hdr:<15}")
     print("-" * 55)
 
     for epoch in range(1, num_epochs + 1):
@@ -144,7 +146,7 @@ def train_siamese_network(
             x1, x2, labels = x1.to(dev), x2.to(dev), labels.to(dev)
             optimizer.zero_grad()
             emb1, emb2 = model(x1, x2)
-            loss = criterion(emb1, emb2, labels)
+            loss = loss_fn(emb1, emb2, labels)
             loss.backward()
             optimizer.step()
 
@@ -164,7 +166,7 @@ def train_siamese_network(
             for x1, x2, labels in val_loader:
                 x1, x2, labels = x1.to(dev), x2.to(dev), labels.to(dev)
                 emb1, emb2 = model(x1, x2)
-                loss = criterion(emb1, emb2, labels)
+                loss = loss_fn(emb1, emb2, labels)
 
                 val_loss += float(loss.item()) * x1.size(0)
                 val_count += int(x1.size(0))
@@ -256,3 +258,183 @@ def generate_siamese_pairs(
 
     random.shuffle(pairs)
     return pairs
+
+
+class TripletLoss(nn.Module):
+    """
+    Triplet margin loss:
+    L(a, p, n) = max(0, d(a, p) - d(a, n) + margin)
+    """
+
+    def __init__(self, margin: float = 0.5):
+        super().__init__()
+        self.margin = float(margin)
+        self.criterion = nn.TripletMarginLoss(margin=self.margin, p=2.0)
+
+    def forward(self, anchor: torch.Tensor, positive: torch.Tensor, negative: torch.Tensor) -> torch.Tensor:
+        return self.criterion(anchor, positive, negative)
+
+
+class SiameseTripletDataset(Dataset):
+    """
+    PyTorch Dataset returning (anchor, positive, negative) tensors.
+    """
+
+    def __init__(
+        self,
+        triplets: List[Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]],
+        img_size: Optional[int] = 128,
+        augment: bool = False
+    ):
+        self.triplets = triplets
+        self.img_size = img_size
+
+        self.normalize = v2.Compose([
+            v2.ToDtype(torch.float32, scale=True),
+            v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        ])
+        self.aug = v2.Compose([
+            v2.RandomHorizontalFlip(p=0.5),
+            v2.RandomVerticalFlip(p=0.5)
+        ]) if augment else None
+
+    def __len__(self) -> int:
+        return len(self.triplets)
+
+    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        sa, sp, sn = self.triplets[idx]
+        ta = process_img(sa["image"], self.normalize, self.aug)
+        tp = process_img(sp["image"], self.normalize, self.aug)
+        tn = process_img(sn["image"], self.normalize, self.aug)
+        return ta, tp, tn
+
+
+def generate_siamese_triplets(
+    samples: List[Dict[str, Any]],
+    num_triplets: int = 1000
+) -> List[Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]]:
+    if len(samples) < 2:
+        raise ValueError("Need at least 2 cell samples to generate triplets.")
+
+    expanded = _expand_samples_for_siamese(samples)
+    orig_samples = [s for s in expanded if s["label"] == 0]
+    inp_samples = [s for s in expanded if s["label"] == 1]
+
+    triplets: List[Tuple[Dict[str, Any], Dict[str, Any], Dict[str, Any]]] = []
+    half = num_triplets // 2
+
+    # Anchor = Original, Positive = Original, Negative = Inpainted
+    for _ in range(half):
+        a, p = random.sample(orig_samples, 2)
+        n = random.choice(inp_samples)
+        triplets.append((a, p, n))
+
+    # Anchor = Inpainted, Positive = Inpainted, Negative = Original
+    for _ in range(num_triplets - half):
+        a, p = random.sample(inp_samples, 2)
+        n = random.choice(orig_samples)
+        triplets.append((a, p, n))
+
+    random.shuffle(triplets)
+    return triplets
+
+
+def train_siamese_triplet_network(
+    model: SiameseNetwork,
+    train_loader: DataLoader,
+    val_loader: DataLoader,
+    num_epochs: int = 10,
+    lr: float = 1e-4,
+    margin: float = 0.5,
+    device: Union[str, torch.device] = "cpu"
+) -> Dict[str, List[float]]:
+    """
+    Trains Siamese network with TripletLoss.
+    """
+    dev = torch.device(device)
+    model = model.to(dev)
+    criterion = TripletLoss(margin=margin)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+
+    history: Dict[str, List[float]] = {
+        "train_loss": [], "val_loss": [], "val_acc": []}
+
+    print(f"{'Epoch':<6} | {'Train Loss':<12} | {'Val Loss':<12} | {'Val Triplet Acc':<15}")
+    print("-" * 55)
+
+    for epoch in range(1, num_epochs + 1):
+        model.train()
+        train_loss = 0.0
+        train_count = 0
+
+        for xa, xp, xn in train_loader:
+            xa, xp, xn = xa.to(dev), xp.to(dev), xn.to(dev)
+            optimizer.zero_grad()
+            ea = model.forward_one(xa)
+            ep = model.forward_one(xp)
+            en = model.forward_one(xn)
+            loss = criterion(ea, ep, en)
+            loss.backward()
+            optimizer.step()
+
+            train_loss += float(loss.item()) * xa.size(0)
+            train_count += int(xa.size(0))
+
+        train_loss /= max(train_count, 1)
+
+        model.eval()
+        val_loss = 0.0
+        val_count = 0
+        correct = 0
+
+        with torch.no_grad():
+            for xa, xp, xn in val_loader:
+                xa, xp, xn = xa.to(dev), xp.to(dev), xn.to(dev)
+                ea = model.forward_one(xa)
+                ep = model.forward_one(xp)
+                en = model.forward_one(xn)
+                loss = criterion(ea, ep, en)
+
+                val_loss += float(loss.item()) * xa.size(0)
+                val_count += int(xa.size(0))
+
+                d_pos = F.pairwise_distance(ea, ep)
+                d_neg = F.pairwise_distance(ea, en)
+                correct += int((d_pos < d_neg).sum().item())
+
+        val_loss /= max(val_count, 1)
+        val_acc = correct / max(val_count, 1)
+
+        history["train_loss"].append(train_loss)
+        history["val_loss"].append(val_loss)
+        history["val_acc"].append(val_acc)
+
+        print(f"{epoch:<6} | {train_loss:<12.4f} | {val_loss:<12.4f} | {val_acc:<15.4f}")
+
+    return history
+
+
+def evaluate_triplet_distances(
+    model: SiameseNetwork,
+    val_loader: DataLoader,
+    device: Union[str, torch.device] = "cpu"
+) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Returns positive (a, p) and negative (a, n) distances from triplet validation loader.
+    """
+    dev = torch.device(device)
+    model.to(dev)
+    model.eval()
+    pos_dists: List[float] = []
+    neg_dists: List[float] = []
+
+    with torch.no_grad():
+        for xa, xp, xn in val_loader:
+            xa, xp, xn = xa.to(dev), xp.to(dev), xn.to(dev)
+            ea = model.forward_one(xa)
+            ep = model.forward_one(xp)
+            en = model.forward_one(xn)
+            pos_dists.extend(F.pairwise_distance(ea, ep).cpu().numpy().tolist())
+            neg_dists.extend(F.pairwise_distance(ea, en).cpu().numpy().tolist())
+
+    return np.array(pos_dists, dtype=np.float32), np.array(neg_dists, dtype=np.float32)

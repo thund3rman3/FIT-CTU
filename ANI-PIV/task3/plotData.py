@@ -66,14 +66,14 @@ def plot_training_comparison(
     ax1.plot(epochs_custom, hist_custom["val_loss"],
              "b-", lw=2, label="Custom CNN (Val)")
     ax1.plot(epochs_resnet_frozen,
-             hist_resnet_frozen["train_loss"], "r--", label="ResNet18 frozen (Train)")
+             hist_resnet_frozen["train_loss"], "r--", label="RN18 frozen (Train)")
     ax1.plot(epochs_resnet_frozen, hist_resnet_frozen["val_loss"],
-             "r-", lw=2, label="ResNet18 frozen (Val)")
+             "r-", lw=2, label="RN18 frozen (Val)")
 
     ax1.plot(epochs_resnet_finetuned,
-             hist_resnet_finetuned["train_loss"], "g--", label="ResNet18 finetuned (Train)")
+             hist_resnet_finetuned["train_loss"], "g--", label="RN18 finetuned (Train)")
     ax1.plot(epochs_resnet_finetuned, hist_resnet_finetuned["val_loss"],
-             "g-", lw=2, label="ResNet18 finetuned (Val)")
+             "g-", lw=2, label="RN18 finetuned (Val)")
 
     ax1.set_title("Loss Curves Comparison", fontsize=13, fontweight="bold")
     ax1.set_xlabel("Epoch", fontsize=11)
@@ -87,14 +87,14 @@ def plot_training_comparison(
     ax2.plot(epochs_custom, hist_custom["val_acc"],
              "b-", lw=2, label="Custom CNN (Val)")
     ax2.plot(epochs_resnet_frozen,
-             hist_resnet_frozen["train_acc"], "r--", label="ResNet18 frozen (Train)")
+             hist_resnet_frozen["train_acc"], "r--", label="RN18 frozen (Train)")
     ax2.plot(epochs_resnet_frozen, hist_resnet_frozen["val_acc"],
-             "r-", lw=2, label="ResNet18 frozen (Val)")
+             "r-", lw=2, label="RN18 frozen (Val)")
 
     ax2.plot(epochs_resnet_finetuned,
-             hist_resnet_finetuned["train_acc"], "g--", label="ResNet18 finetuned (Train)")
+             hist_resnet_finetuned["train_acc"], "g--", label="RN18 finetuned (Train)")
     ax2.plot(epochs_resnet_finetuned, hist_resnet_finetuned["val_acc"],
-             "g-", lw=2, label="ResNet18 finedtuned (Val)")
+             "g-", lw=2, label="RN18 finetuned (Val)")
 
     ax2.set_title("Accuracy Curves Comparison", fontsize=13, fontweight="bold")
     ax2.set_xlabel("Epoch", fontsize=11)
@@ -158,7 +158,6 @@ def plot_xai_samples(
         samples: List[Dict[str, Any]],
         target_layer: nn.Module,
         img_size: Optional[int] = 128,
-        to_rgb: bool = True,
         device: Union[str, torch.device] = "cpu",
         save_path: Optional[Union[Path, str]] = None):
     """
@@ -170,19 +169,12 @@ def plot_xai_samples(
     grad_cam = GradCAM(model, target_layer)
 
     sz = 128 if img_size is None else img_size
-    if to_rgb:
-        transform = v2.Compose([
-            v2.Resize((sz, sz), interpolation=v2.InterpolationMode.BILINEAR),
-            v2.ToDtype(torch.float32, scale=True),
-            v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-        ])
-    else:
-        transform = v2.Compose([
-            v2.Resize((sz, sz), interpolation=v2.InterpolationMode.BILINEAR),
-            v2.ToDtype(torch.float32, scale=True)
-        ])
-
-    # Střídá zobrazení Original (0) a Inpainted (1) pro jednotlivé vzorky
+    transform = v2.Compose([
+        v2.Resize((sz, sz), interpolation=v2.InterpolationMode.BILINEAR),
+        v2.ToDtype(torch.float32, scale=True),
+        v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
+   
     expanded_items = []
     for idx, s in enumerate(samples):
         target_c = idx % 2  # 0 = Original, 1 = Inpainted
@@ -190,7 +182,7 @@ def plot_xai_samples(
         expanded_items.append((s, img_raw, target_c))
 
     n_samples = len(expanded_items)
-    fig, axes = plt.subplots(n_samples, 5, figsize=(17, 3.4 * n_samples))
+    fig, axes = plt.subplots(n_samples, 6, figsize=(20, 3.4 * n_samples))
     if n_samples == 1:
         axes = np.expand_dims(axes, 0)
 
@@ -206,6 +198,8 @@ def plot_xai_samples(
             confidence = float(probs[pred_class])
 
         cam = grad_cam.generate(inp_tensor, target_class=target_c)
+        ggc = compute_guided_gradcam(
+            model, target_layer, inp_tensor, target_class=target_c)
         saliency = compute_saliency_map(
             model, inp_tensor, target_class=target_c)
         ig = compute_integrated_gradients(
@@ -227,18 +221,21 @@ def plot_xai_samples(
         axes[idx, 1].axis("off")
 
         axes[idx, 2].imshow(overlay)
-        axes[idx, 2].set_title("Grad-CAM Overlay", fontsize=10)
+        axes[idx, 2].set_title("Captum Grad-CAM", fontsize=10)
         axes[idx, 2].axis("off")
 
-        axes[idx, 3].imshow(saliency, cmap="inferno")
-        axes[idx, 3].set_title("Saliency Map", fontsize=10)
+        axes[idx, 3].imshow(ggc, cmap="hot")
+        axes[idx, 3].set_title("Captum Guided Grad-CAM", fontsize=10)
         axes[idx, 3].axis("off")
 
-        axes[idx, 4].imshow(ig, cmap="viridis")
-        axes[idx, 4].set_title("Integrated Gradients", fontsize=10)
+        axes[idx, 4].imshow(saliency, cmap="inferno")
+        axes[idx, 4].set_title("Captum Saliency", fontsize=10)
         axes[idx, 4].axis("off")
 
-    grad_cam.remove_hooks()
+        axes[idx, 5].imshow(ig, cmap="viridis")
+        axes[idx, 5].set_title("Captum Integrated Grad", fontsize=10)
+        axes[idx, 5].axis("off")
+
     plt.tight_layout()
     save_figure(fig, save_path)
 
@@ -257,9 +254,9 @@ def plot_siamese_results(
 
     # Loss curve
     ax1.plot(epochs, history_siamese["train_loss"],
-             "b-o", lw=2, label="Train Contrastive Loss")
+             "b-o", lw=2, label="Train Loss")
     ax1.plot(epochs, history_siamese["val_loss"],
-             "r-s", lw=2, label="Val Contrastive Loss")
+             "r-s", lw=2, label="Val Loss")
     ax1.set_title("Siamese Network Training Loss",
                   fontsize=13, fontweight="bold")
     ax1.set_xlabel("Epoch", fontsize=11)
@@ -379,7 +376,6 @@ def plot_siamese_pair_examples(
     if n == 1:
         axes = np.expand_dims(axes, 0)
 
-    # Větší mezera (wspace) mezi oběma obrázky pro text uprostřed
     plt.subplots_adjust(wspace=0.45, hspace=0.35)
 
     for i in range(n):

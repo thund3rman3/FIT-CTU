@@ -1,7 +1,6 @@
-from typing import Literal
 import random
 from pathlib import Path
-from typing import Tuple, List, Dict, Optional, Union, Any, Sequence, cast
+from typing import Tuple, List, Dict, Optional, Union, Any
 
 import cv2
 import numpy as np
@@ -100,11 +99,10 @@ def inpaint_cilia_image(
     return inpainted
 
 # Save paths of images and masks, create pairs for the whole dataset and divide into training and validation sets.
-
-
 def make_pairs(cells_dir: Union[Path, str],
                masks_pts_dir: Union[Path, str],
-               val_ratio: float = 0.2) -> Tuple[List[Tuple[Path, Path]], List[Tuple[Path, Path]]]:
+               val_ratio: float = 0.15,
+               test_ratio: float = 0.15) -> Union[Tuple[List[Tuple[Path, Path]], List[Tuple[Path, Path]]], Tuple[List[Tuple[Path, Path]], List[Tuple[Path, Path]], List[Tuple[Path, Path]]]]:
 
     c_dir = Path(cells_dir).resolve()
     m_dir = Path(masks_pts_dir).resolve()
@@ -127,14 +125,19 @@ def make_pairs(cells_dir: Union[Path, str],
             f"No matching (cell, mask_pts) pairs found in {c_dir} and {m_dir}!")
 
     random.shuffle(pairs)
-    split_idx = int(len(pairs) * (1.0 - val_ratio))
-    train_pairs = pairs[:split_idx]
-    val_pairs = pairs[split_idx:]
+    n = len(pairs)
+    val_count = int(n * val_ratio)
+    test_count = int(n * test_ratio)
+    train_count = n - val_count - test_count
+
+    train_pairs = pairs[:train_count]
+    val_pairs = pairs[train_count:train_count + val_count]
+    if test_ratio > 0:
+        test_pairs = pairs[train_count + val_count:]
+        return train_pairs, val_pairs, test_pairs
     return train_pairs, val_pairs
 
 # Load dataset images and masks, apply inpainting, and return one dataset
-
-
 def build_samples(pair_list: List[Tuple[Path, Path]],
                   img_size: Optional[int] = None) -> List[Dict[str, Any]]:
     samples: List[Dict[str, Any]] = []
@@ -167,26 +170,30 @@ def build_samples(pair_list: List[Tuple[Path, Path]],
     return samples
 
 # Load images and masks, apply inpainting, and return a list for training and validation datasets.
-
-
 def prepare_classification_dataset(
     cells_dir: Union[Path, str],
     masks_pts_dir: Union[Path, str],
-    val_ratio: float = 0.2,
+    val_ratio: float = 0.15,
+    test_ratio: float = 0.15,
     img_size: Optional[int] = 256,
-) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+) -> Union[Tuple[List[Dict[str, Any]], List[Dict[str, Any]]], Tuple[List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]]]]:
 
-    train_pairs, val_pairs = make_pairs(
-        cells_dir, masks_pts_dir, val_ratio=val_ratio)
+    split_res = make_pairs(
+        cells_dir, masks_pts_dir, val_ratio=val_ratio, test_ratio=test_ratio)
 
+    if len(split_res) == 3:
+        train_pairs, val_pairs, test_pairs = split_res
+        train_samples = build_samples(train_pairs, img_size=img_size)
+        val_samples = build_samples(val_pairs, img_size=img_size)
+        test_samples = build_samples(test_pairs, img_size=img_size)
+        return train_samples, val_samples, test_samples
+
+    train_pairs, val_pairs = split_res
     train_samples = build_samples(train_pairs, img_size=img_size)
     val_samples = build_samples(val_pairs, img_size=img_size)
-
     return train_samples, val_samples
 
 # Set dimensions of image, return tensor
-
-
 def process_img(img: np.ndarray, preprocess, aug_transforms: Optional[Any] = None) -> torch.Tensor:
 
     if img.ndim == 2:
@@ -339,8 +346,7 @@ def train_classifier(
 
                 imgs = torch.cat([orig_imgs, inp_imgs], dim=0)
                 labels = torch.cat([
-                    torch.zeros(orig_imgs.size(
-                        0), dtype=torch.long, device=dev),
+                    torch.zeros(orig_imgs.size(0), dtype=torch.long, device=dev),
                     torch.ones(inp_imgs.size(0), dtype=torch.long, device=dev),
                 ], dim=0)
 

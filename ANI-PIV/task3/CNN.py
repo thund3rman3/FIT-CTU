@@ -6,7 +6,7 @@ import torch.nn as nn
 import torchvision.models as models
 
 
-class ConvBlock(nn.Module):
+class DoubleConv(nn.Module):
     def __init__(
         self,
         in_channels: int,
@@ -27,8 +27,23 @@ class ConvBlock(nn.Module):
             raise ValueError(f"Unsupported pool_type: {pool_type}")
 
         self.block = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels,
-                      kernel_size=kernel_size, padding=padding, bias=False),
+            nn.Conv2d(
+                in_channels,
+                out_channels,
+                kernel_size=kernel_size,
+                padding=padding,
+                bias=False,
+            ),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=False),
+
+            nn.Conv2d(
+                out_channels,
+                out_channels,
+                kernel_size=kernel_size,
+                padding=padding,
+                bias=False,
+            ),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=False),
             pool,
@@ -61,7 +76,7 @@ class CustomCNN(nn.Module):
         for idx in range(num_blocks):
             is_last = idx == num_blocks - 1
             blocks.append(
-                ConvBlock(
+                DoubleConv(
                     in_channels=curr_in,
                     out_channels=curr_out,
                     kernel_size=kernel_size,
